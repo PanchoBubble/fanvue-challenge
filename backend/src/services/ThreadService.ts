@@ -32,6 +32,11 @@ export class ThreadService {
     return thread;
   }
 
+  async create(title: string): Promise<Thread> {
+    const thread = this.repo.create({ title });
+    return this.repo.save(thread);
+  }
+
   async updateLastMessage(
     threadId: string,
     lastMessageAt: Date

@@ -70,13 +70,14 @@ fanvue-challenge/
 │   │   ├── migrations/
 │   │   │   └── 001-CreateSchema.ts   # Initial schema migration
 │   │   ├── routes/
-│   │   │   ├── threads.ts            # GET /threads
+│   │   │   ├── threads.ts            # GET /threads, POST /threads
 │   │   │   └── messages.ts           # GET/POST messages, GET stream
 │   │   ├── services/
 │   │   │   ├── ThreadService.ts      # Thread business logic
 │   │   │   ├── MessageService.ts     # Message CRUD + pagination
 │   │   │   └── SSEService.ts         # SSE connection management + Redis pub/sub
 │   │   ├── middleware/
+│   │   │   ├── auth.ts               # requireAuth + requireAuthFlexible (header + query param)
 │   │   │   ├── cors.ts
 │   │   │   ├── errorHandler.ts
 │   │   │   └── validation.ts         # Request body/param validation
@@ -105,6 +106,12 @@ GET /api/threads
   - Query: ?search= (optional, filters by title — server-side ILIKE)
   - Response: { threads: Thread[] }
 
+POST /api/threads
+  - Creates a new thread
+  - Body: { title: string }
+  - Validation: title must be non-empty string, min 2 chars, max 255
+  - Response: { thread: Thread }
+
 GET /api/threads/:id/messages?cursor=<string>&limit=<number>
   - Paginated messages for a thread (chronological order, oldest first)
   - Default limit: 50
@@ -120,6 +127,7 @@ POST /api/threads/:id/messages
 
 GET /api/threads/:id/stream
   - SSE endpoint for real-time messages
+  - Auth: supports ?token=<jwt> query param (EventSource cannot send headers)
   - Headers: Content-Type: text/event-stream
   - Events: { type: "message", data: Message }
   - Heartbeat: every 30s to keep connection alive
@@ -363,9 +371,9 @@ CMD ["sh", "-c", "npm run migration:run && npm run seed && npm start"]
 - [ ] TypeORM configuration + DataSource
 - [ ] Thread entity + Message entity
 - [ ] Initial migration (001-CreateSchema)
-- [ ] ThreadService (list, get by id, search)
+- [ ] ThreadService (list, get by id, search, create)
 - [ ] MessageService (paginated get, create)
-- [ ] Thread routes (GET /api/threads)
+- [ ] Thread routes (GET /api/threads, POST /api/threads)
 - [ ] Message routes (GET messages, POST message)
 - [ ] Cursor encode/decode utilities
 - [ ] SSE endpoint (GET /api/threads/:id/stream)

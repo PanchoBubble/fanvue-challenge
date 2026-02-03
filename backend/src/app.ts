@@ -4,7 +4,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import authRoutes from "./routes/auth";
 import threadRoutes from "./routes/threads";
 import messageRoutes from "./routes/messages";
-import { requireAuth } from "./middleware/auth";
+import { requireAuth, requireAuthFlexible } from "./middleware/auth";
 
 const app = express();
 
@@ -15,7 +15,7 @@ app.use(express.json({ limit: "16kb" }));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/threads", requireAuth, threadRoutes);
-app.use("/api/threads/:id/messages", requireAuth, messageRoutes);
+app.use("/api/threads/:id/messages", requireAuthFlexible, messageRoutes);
 
 // Health check
 app.get("/api/health", (_req, res) => {

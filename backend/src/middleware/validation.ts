@@ -23,6 +23,28 @@ export function validateMessageBody(
   next();
 }
 
+export function validateThreadBody(
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): void {
+  const { title } = req.body;
+
+  if (!title || typeof title !== "string") {
+    return next(new AppError(400, "Missing required field: title"));
+  }
+
+  if (title.trim().length < 2) {
+    return next(new AppError(422, "Thread title must be at least 2 characters"));
+  }
+
+  if (title.length > 255) {
+    return next(new AppError(422, "Thread title exceeds maximum length of 255 characters"));
+  }
+
+  next();
+}
+
 export function validatePaginationParams(
   req: Request,
   _res: Response,

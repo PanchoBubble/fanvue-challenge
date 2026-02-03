@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { ThreadService } from "../services/ThreadService";
+import { validateThreadBody } from "../middleware/validation";
 
 const router = Router();
 const threadService = new ThreadService();
@@ -18,5 +19,24 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
     next(err);
   }
 });
+
+/**
+ * POST /api/threads
+ * Creates a new thread.
+ * Body: { title: string }
+ */
+router.post(
+  "/",
+  validateThreadBody,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { title } = req.body;
+      const thread = await threadService.create(title.trim());
+      res.status(201).json({ thread });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default router;
