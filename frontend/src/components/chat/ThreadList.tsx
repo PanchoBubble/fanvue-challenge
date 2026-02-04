@@ -27,6 +27,47 @@ function formatTimeAgo(dateStr: string): string {
   return `${days}d ago`
 }
 
+// Deterministic color palette for thread avatars
+const AVATAR_COLORS = [
+  '#E57373',
+  '#F06292',
+  '#BA68C8',
+  '#9575CD',
+  '#7986CB',
+  '#64B5F6',
+  '#4FC3F7',
+  '#4DD0E1',
+  '#4DB6AC',
+  '#81C784',
+  '#AED581',
+  '#DCE775',
+  '#FFD54F',
+  '#FFB74D',
+  '#FF8A65',
+]
+
+function getAvatarColor(id: string): string {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
+function ThreadAvatar({ title, id }: { title: string; id: string }) {
+  const letter = title.trim()[0]?.toUpperCase() || '?'
+  const bgColor = getAvatarColor(id)
+
+  return (
+    <div
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
+      style={{ backgroundColor: bgColor }}
+    >
+      {letter}
+    </div>
+  )
+}
+
 export function ThreadList({
   selectedThreadId,
   onSelectThread,
@@ -185,6 +226,7 @@ export function ThreadList({
               key={i}
               className="flex h-16 animate-pulse items-center gap-3 rounded-lg p-3"
             >
+              <div className="h-10 w-10 shrink-0 rounded-full bg-white/10" />
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="h-3.5 w-3/4 rounded bg-white/10" />
                 <div className="h-2.5 w-1/3 rounded bg-white/5" />
@@ -220,6 +262,7 @@ export function ThreadList({
                     <span className="bg-brand relative inline-flex h-2.5 w-2.5 rounded-full" />
                   </span>
                 )}
+                <ThreadAvatar title={thread.title} id={thread.id} />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex items-center justify-between gap-2">
                     {isEditing ? (

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ChevronDown } from 'lucide-react'
 import { useAuthStore } from '@/lib/authStore'
 import { useMessages } from '@/hooks/useMessages'
 import {
@@ -53,6 +53,9 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
   // Delete state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
+  // Scroll-to-bottom state
+  const [showScrollButton, setShowScrollButton] = useState(false)
+
   useEffect(() => {
     if (isEditingTitle) {
       editInputRef.current?.focus()
@@ -60,10 +63,11 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
     }
   }, [isEditingTitle])
 
-  // Cancel edit when switching threads
+  // Reset state when switching threads
   useEffect(() => {
     setIsEditingTitle(false)
     setShowDeleteConfirm(false)
+    setShowScrollButton(false)
   }, [threadId])
 
   const handleEditSave = () => {
@@ -136,7 +140,7 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
     prevScrollHeight.current = el.scrollHeight
   }, [messages, virtualizer])
 
-  // Infinite scroll: fetch older when near top
+  // Infinite scroll: fetch older when near top + track scroll position for button
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
@@ -145,11 +149,22 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
       if (el.scrollTop < 200 && hasPreviousPage && !isFetchingPreviousPage) {
         fetchPreviousPage()
       }
+
+      // Show scroll-to-bottom button when not near bottom
+      const distanceFromBottom =
+        el.scrollHeight - el.scrollTop - el.clientHeight
+      setShowScrollButton(distanceFromBottom > 200)
     }
 
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
   }, [hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage])
+
+  const scrollToBottom = () => {
+    if (messages.length > 0) {
+      virtualizer.scrollToIndex(messages.length - 1, { align: 'end' })
+    }
+  }
 
   if (!threadId) {
     return (
@@ -228,62 +243,78 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
       />
 
       {/* Messages */}
-      <div ref={scrollRef} className="scrollbar-thin flex-1 overflow-y-auto">
-        {isLoading && (
-          <div className="flex flex-col gap-4 p-5">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className={`flex w-full ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}
-              >
-                <div className="bg-surface-page flex max-w-[380px] animate-pulse flex-col gap-2 rounded-xl px-3.5 py-2.5">
-                  <div className="h-2.5 w-16 rounded bg-white/10" />
-                  <div className="h-3 w-48 rounded bg-white/10" />
-                  <div className="h-2 w-12 rounded bg-white/5" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {!isLoading && messages.length > 0 && (
-          <div
-            style={{
-              height: virtualizer.getTotalSize(),
-              width: '100%',
-              position: 'relative',
-            }}
-          >
-            {isFetchingPreviousPage && (
-              <div className="text-dim absolute top-2 right-0 left-0 z-10 text-center text-xs">
-                Loading…
-              </div>
-            )}
-            {virtualItems.map((virtualRow) => {
-              const msg = messages[virtualRow.index]
-              return (
+      <div className="relative flex-1">
+        <div
+          ref={scrollRef}
+          className="scrollbar-thin absolute inset-0 overflow-y-auto"
+        >
+          {isLoading && (
+            <div className="flex flex-col gap-4 p-5">
+              {Array.from({ length: 4 }).map((_, i) => (
                 <div
-                  key={virtualRow.key}
-                  data-index={virtualRow.index}
-                  ref={virtualizer.measureElement}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
+                  key={i}
+                  className={`flex w-full ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}
                 >
-                  <div className="px-5 py-2">
-                    <MessageBubble
-                      message={msg}
-                      isSelf={msg.author === user?.username}
-                    />
+                  <div className="bg-surface-page flex max-w-[380px] animate-pulse flex-col gap-2 rounded-xl px-3.5 py-2.5">
+                    <div className="h-2.5 w-16 rounded bg-white/10" />
+                    <div className="h-3 w-48 rounded bg-white/10" />
+                    <div className="h-2 w-12 rounded bg-white/5" />
                   </div>
                 </div>
-              )
-            })}
-          </div>
+              ))}
+            </div>
+          )}
+
+          {!isLoading && messages.length > 0 && (
+            <div
+              style={{
+                height: virtualizer.getTotalSize(),
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {isFetchingPreviousPage && (
+                <div className="text-dim absolute top-2 right-0 left-0 z-10 text-center text-xs">
+                  Loading…
+                </div>
+              )}
+              {virtualItems.map((virtualRow) => {
+                const msg = messages[virtualRow.index]
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    ref={virtualizer.measureElement}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    <div className="px-5 py-2">
+                      <MessageBubble
+                        message={msg}
+                        isSelf={msg.author === user?.username}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Scroll to bottom button */}
+        {showScrollButton && (
+          <button
+            onClick={scrollToBottom}
+            className="bg-surface-active hover:bg-surface-page border-border-subtle absolute right-4 bottom-4 flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors"
+            aria-label="Scroll to bottom"
+          >
+            <ChevronDown className="h-5 w-5 text-white" />
+          </button>
         )}
       </div>
 
