@@ -73,7 +73,7 @@ router.post(
 
       // Broadcast message to thread subscribers + thread update to global subscribers
       await sseService.broadcastMessage(id, message)
-      await sseService.broadcastThreadUpdated(updatedThread)
+      await sseService.broadcastThreadUpdated(updatedThread, message.author)
 
       res.status(201).json({ message })
     } catch (err) {

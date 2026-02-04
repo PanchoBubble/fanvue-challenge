@@ -41,7 +41,7 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
             : 'bg-surface-page rounded-xl rounded-tl-none'
         }`}
       >
-        <div className="flex justify-between">
+        <div className="flex justify-between gap-3">
           {!isSelf ? (
             <span
               className="text-[11px] font-semibold"

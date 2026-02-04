@@ -8,6 +8,7 @@ export interface Thread {
   title: string
   lastMessageAt: string
   lastMessageText: string | null
+  lastMessageUser: string | null
   unreadCount: number
   messageCount: number
   createdAt: string

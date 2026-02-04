@@ -7,6 +7,7 @@ import {
   useUpdateThread,
   useDeleteThread,
 } from '@/hooks/useThreads'
+import { useAuthStore } from '@/lib/authStore'
 import { ThreadMenu } from './ThreadMenu'
 import { ConfirmModal } from './ConfirmModal'
 
@@ -31,6 +32,7 @@ export function ThreadList({
   onSelectThread,
 }: ThreadListProps) {
   const [search, setSearch] = useState('')
+  const currentUsername = useAuthStore((s) => s.user?.username)
   const { data: allThreads = [], isLoading } = useThreads()
   const threads = search
     ? allThreads.filter((t) =>
@@ -80,7 +82,14 @@ export function ThreadList({
     const newlyFlashing: string[] = []
     for (const t of threads) {
       const prev = prevTimestamps[t.id]
-      if (prev && prev !== t.lastMessageAt && !flashingIds.has(t.id)) {
+      // Only flash if message is from someone else
+      const isFromOther = t.lastMessageUser !== currentUsername
+      if (
+        prev &&
+        prev !== t.lastMessageAt &&
+        !flashingIds.has(t.id) &&
+        isFromOther
+      ) {
         newlyFlashing.push(t.id)
       }
     }

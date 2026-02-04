@@ -122,9 +122,14 @@ export class SSEService {
 
   /**
    * Broadcast a thread updated event to all global SSE clients.
+   * Optionally includes lastMessageUser for notification filtering.
    */
-  async broadcastThreadUpdated(thread: Thread): Promise<void> {
-    const payload = JSON.stringify({ event: 'thread_updated', data: thread })
+  async broadcastThreadUpdated(
+    thread: Thread,
+    lastMessageUser?: string,
+  ): Promise<void> {
+    const data = lastMessageUser ? { ...thread, lastMessageUser } : thread
+    const payload = JSON.stringify({ event: 'thread_updated', data })
     await this.publisher.publish(GLOBAL_CHANNEL, payload)
   }
 
