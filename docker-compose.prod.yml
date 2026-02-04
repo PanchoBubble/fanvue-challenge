@@ -43,7 +43,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - ADMIN_SECRET=${ADMIN_SECRET:-fanvue-admin}
       - FRONTEND_URL=${FRONTEND_URL}
-    command: ["sh", "-c", "npm run migration:run && npm start"]
+    command: ["sh", "-c", "npm run build && npm run migration:run && npm start"]
     depends_on:
       postgres:
         condition: service_healthy
