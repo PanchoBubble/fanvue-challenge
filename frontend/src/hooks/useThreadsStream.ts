@@ -46,6 +46,21 @@ export function useThreadsStream() {
       )
     })
 
+    es.addEventListener('thread_deleted', (e) => {
+      const { id } = JSON.parse(e.data)
+
+      qc.setQueriesData<Thread[]>(
+        { queryKey: queryKeys.threads.all },
+        (old) => {
+          if (!old) return old
+          return old.filter((t) => t.id !== id)
+        },
+      )
+
+      // Remove cached messages for the deleted thread
+      qc.removeQueries({ queryKey: queryKeys.messages.byThread(id) })
+    })
+
     return () => es.close()
   }, [qc])
 }

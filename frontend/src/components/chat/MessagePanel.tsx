@@ -1,12 +1,14 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { ChevronLeft } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useMessages } from '@/hooks/useMessages'
-import { useThreads } from '@/hooks/useThreads'
+import { useThreads, useUpdateThread, useDeleteThread } from '@/hooks/useThreads'
 import { useThreadStream } from '@/hooks/useThreadStream'
 import { MessageBubble } from './MessageBubble'
 import { MessageInput } from './MessageInput'
+import { ThreadMenu } from './ThreadMenu'
+import { ConfirmModal } from './ConfirmModal'
 
 interface MessagePanelProps {
   threadId?: string
@@ -23,19 +25,60 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
     fetchPreviousPage,
   } = useMessages(threadId)
   const { data: threads = [] } = useThreads()
+  const updateThread = useUpdateThread()
+  const deleteThread = useDeleteThread()
   const scrollRef = useRef<HTMLDivElement>(null)
   const prevThreadId = useRef(threadId)
-  const prevFirstId = useRef<string>()
+  const prevFirstId = useRef<string>('')
   const prevCount = useRef(0)
   const prevScrollHeight = useRef(0)
   useThreadStream(threadId)
 
   const thread = threads.find((t) => t.id === threadId)
 
+  // Inline edit state
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editTitle, setEditTitle] = useState('')
+  const editInputRef = useRef<HTMLInputElement>(null)
+
+  // Delete state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  useEffect(() => {
+    if (isEditingTitle) {
+      editInputRef.current?.focus()
+      editInputRef.current?.select()
+    }
+  }, [isEditingTitle])
+
+  // Cancel edit when switching threads
+  useEffect(() => {
+    setIsEditingTitle(false)
+    setShowDeleteConfirm(false)
+  }, [threadId])
+
+  const handleEditSave = () => {
+    const trimmed = editTitle.trim()
+    if (trimmed.length >= 2 && threadId) {
+      updateThread.mutate({ id: threadId, title: trimmed })
+    }
+    setIsEditingTitle(false)
+  }
+
+  const handleDeleteConfirm = () => {
+    if (!threadId) return
+    deleteThread.mutate(threadId, {
+      onSuccess: () => {
+        setShowDeleteConfirm(false)
+        onBack?.()
+      },
+    })
+  }
+
   // Reset when switching threads
   if (prevThreadId.current !== threadId) {
     prevThreadId.current = threadId
-    prevFirstId.current = undefined
+    prevFirstId.current = ''
     prevCount.current = 0
     prevScrollHeight.current = 0
   }
@@ -96,8 +139,8 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
 
   if (!threadId) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-surface-card">
-        <p className="text-sm text-dim">Select a thread to start chatting</p>
+      <div className="bg-surface-card flex flex-1 items-center justify-center">
+        <p className="text-dim text-sm">Select a thread to start chatting</p>
       </div>
     )
   }
@@ -105,19 +148,64 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
   const virtualItems = virtualizer.getVirtualItems()
 
   return (
-    <div className="flex flex-1 flex-col bg-surface-card">
+    <div className="bg-surface-card flex flex-1 flex-col">
       {/* Thread header */}
-      <div className="flex h-[52px] shrink-0 items-center gap-2 border-b border-surface-page px-5 bg-surface-page border-b border-border-card">
+      <div className="bg-surface-page border-border-subtle group flex shrink-0 items-center gap-2 border-b px-5 py-2">
         {onBack && (
           <button
             onClick={onBack}
-            className="md:hidden -ml-1 p-1 text-dim hover:text-white transition-colors"
+            className="text-dim -ml-1 p-1 transition-colors hover:text-white md:hidden"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
         )}
-        <h2 className="text-base font-semibold">{thread?.title ?? ''}</h2>
+        <div className="flex min-w-0 flex-1 flex-col">
+          {isEditingTitle ? (
+            <input
+              ref={editInputRef}
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleEditSave()
+                if (e.key === 'Escape') setIsEditingTitle(false)
+              }}
+              onBlur={handleEditSave}
+              className="min-w-0 rounded border border-brand bg-transparent px-1.5 py-0.5 text-base font-semibold text-white outline-none"
+            />
+          ) : (
+            <h2 className="truncate text-base font-semibold">{thread?.title ?? ''}</h2>
+          )}
+          {thread && !isEditingTitle && (
+            <p className="text-dim truncate text-xs">
+              {thread.messageCount} {thread.messageCount === 1 ? 'message' : 'messages'}
+              {thread.lastMessageAt && (
+                <span> · last {new Date(thread.lastMessageAt).toLocaleString()}</span>
+              )}
+            </p>
+          )}
+        </div>
+        {thread && !isEditingTitle && (
+          <ThreadMenu
+            onEdit={() => {
+              setEditTitle(thread.title)
+              setIsEditingTitle(true)
+            }}
+            onDelete={() => setShowDeleteConfirm(true)}
+          />
+        )}
       </div>
+
+      {/* Delete confirmation */}
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Delete thread"
+        description={`Are you sure you want to delete "${thread?.title ?? ''}"? This will permanently remove the thread and all its messages.`}
+        confirmLabel="Delete"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
+        isLoading={deleteThread.isPending}
+      />
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
@@ -128,7 +216,7 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
                 key={i}
                 className={`flex w-full ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}
               >
-                <div className="flex max-w-[380px] animate-pulse flex-col gap-2 rounded-xl bg-surface-page px-3.5 py-2.5">
+                <div className="bg-surface-page flex max-w-[380px] animate-pulse flex-col gap-2 rounded-xl px-3.5 py-2.5">
                   <div className="h-2.5 w-16 rounded bg-white/10" />
                   <div className="h-3 w-48 rounded bg-white/10" />
                   <div className="h-2 w-12 rounded bg-white/5" />
@@ -147,7 +235,7 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
             }}
           >
             {isFetchingPreviousPage && (
-              <div className="absolute top-2 left-0 right-0 z-10 text-center text-xs text-dim">
+              <div className="text-dim absolute top-2 right-0 left-0 z-10 text-center text-xs">
                 Loading…
               </div>
             )}

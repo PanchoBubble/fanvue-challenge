@@ -1,6 +1,9 @@
+import { useCallback, useEffect, useRef } from 'react'
 import { useSearch, useNavigate } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/lib/auth'
 import { useThreadsStream } from '@/hooks/useThreadsStream'
+import type { Thread } from '@/types/api'
 import { ThreadList } from './ThreadList'
 import { MessagePanel } from './MessagePanel'
 
@@ -8,11 +11,31 @@ export function ChatLayout() {
   const { user, logout } = useAuth()
   const { threadId: selectedThreadId } = useSearch({ from: '/_authenticated/threads' })
   const navigate = useNavigate()
-  const setSelectedThreadId = (id: string) =>
-    navigate({ to: '/threads', search: { threadId: id } })
+  const qc = useQueryClient()
+  const selectedRef = useRef(selectedThreadId)
+  selectedRef.current = selectedThreadId
+
+  const setSelectedThreadId = useCallback(
+    (id: string) => navigate({ to: '/threads', search: id ? { threadId: id } : {} }),
+    [navigate],
+  )
 
   // Subscribe to global thread events (e.g. new thread created)
   useThreadsStream()
+
+  // Navigate away if the currently selected thread disappears from cache (SSE delete from another tab)
+  useEffect(() => {
+    const unsub = qc.getQueryCache().subscribe((event) => {
+      if (event.type !== 'updated' || !selectedRef.current) return
+      const query = event.query
+      if (!query.queryKey[0] || query.queryKey[0] !== 'threads') return
+      const data = query.state.data as Thread[] | undefined
+      if (data && !data.some((t) => t.id === selectedRef.current)) {
+        setSelectedThreadId('')
+      }
+    })
+    return unsub
+  }, [qc, setSelectedThreadId])
 
   return (
     <div className="flex h-screen flex-col bg-surface-page">
@@ -23,7 +46,7 @@ export function ChatLayout() {
           <span className="text-sm font-medium">{user?.username}</span>
           <button
             onClick={logout}
-            className="flex h-[34px] items-center rounded-md border border-white/[0.13] px-3.5 text-sm text-dim hover:bg-white/5 transition-colors"
+            className="flex h-[34px] cursor-pointer items-center rounded-md border border-white/[0.13] px-3.5 text-sm text-dim hover:bg-white/5 transition-colors"
           >
             Log out
           </button>

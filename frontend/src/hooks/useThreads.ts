@@ -15,6 +15,31 @@ export function useThreads(search?: string) {
   })
 }
 
+export function useUpdateThread() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, title }: { id: string; title: string }) =>
+      apiFetch<{ thread: Thread }>(`/api/threads/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ title }),
+      }).then((r) => r.thread),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.threads.all })
+    },
+  })
+}
+
+export function useDeleteThread() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<void>(`/api/threads/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.threads.all })
+    },
+  })
+}
+
 export function useCreateThread() {
   const qc = useQueryClient()
   return useMutation({

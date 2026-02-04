@@ -21,19 +21,19 @@ export function MessageInput({ threadId }: MessageInputProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex h-16 shrink-0 items-center gap-3 border-t border-surface-page bg-surface-page px-5"
+      className="border-border-subtle bg-surface-page flex h-16 shrink-0 items-center gap-3 border-t px-5"
     >
       <input
         type="text"
         placeholder="Type a message..."
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="flex-1 h-[42px] rounded-lg border border-border-input bg-white/[0.04] px-3.5 text-sm text-white outline-none placeholder:text-placeholder"
+        className="border-border-input placeholder:text-placeholder h-[42px] flex-1 rounded-lg border bg-white/[0.04] px-3.5 text-sm text-white outline-none"
       />
       <button
         type="submit"
         disabled={!text.trim() || sendMessage.isPending}
-        className="flex h-[42px] w-[42px] items-center justify-center rounded-lg bg-brand text-surface-page transition-colors disabled:opacity-50"
+        className="bg-brand text-surface-page flex h-[42px] w-[42px] cursor-pointer items-center justify-center rounded-lg transition-colors disabled:opacity-50"
       >
         <Send className="h-[18px] w-[18px]" />
       </button>
