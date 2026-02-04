@@ -54,10 +54,11 @@ router.post(
       const message = await messageService.create(id, text, author);
 
       // Update thread metadata
-      await threadService.updateLastMessage(id, message.createdAt);
+      const updatedThread = await threadService.updateLastMessage(id, message.createdAt, message.text);
 
-      // Broadcast via SSE
+      // Broadcast message to thread subscribers + thread update to global subscribers
       await sseService.broadcastMessage(id, message);
+      await sseService.broadcastThreadUpdated(updatedThread);
 
       res.status(201).json({ message });
     } catch (err) {

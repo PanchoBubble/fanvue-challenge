@@ -39,16 +39,20 @@ export class ThreadService {
 
   async updateLastMessage(
     threadId: string,
-    lastMessageAt: Date
-  ): Promise<void> {
+    lastMessageAt: Date,
+    lastMessageText: string
+  ): Promise<Thread> {
     await this.repo
       .createQueryBuilder()
       .update(Thread)
       .set({
         lastMessageAt,
+        lastMessageText,
         messageCount: () => '"messageCount" + 1',
       })
       .where("id = :id", { id: threadId })
       .execute();
+
+    return this.getById(threadId);
   }
 }

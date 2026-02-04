@@ -72,29 +72,34 @@ export function ThreadList({ selectedThreadId, onSelectThread }: ThreadListProps
                 exit={{ opacity: 0, x: -12 }}
                 transition={{ duration: 0.15 }}
                 onClick={() => onSelectThread(thread.id)}
-                className={`flex h-16 items-center gap-3 rounded-lg p-3 text-left transition-colors ${
+                className={`flex h-16 items-center gap-3 rounded-lg p-3 text-left transition-colors outline-surface-active ${
                   isActive
                     ? 'bg-surface-active outline outline-1 outline-surface-active'
                     : 'hover:bg-white/5'
                 }`}
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span
-                    className={`truncate text-sm ${isActive ? 'font-medium' : ''}`}
-                  >
-                    {thread.title}
-                  </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={`truncate text-sm ${isActive ? 'font-medium' : ''}`}
+                    >
+                      {thread.title}
+                    </span>
                     {thread.unreadCount > 0 && (
                       <span
-                        className={`flex h-5 items-center rounded-[10px] px-1.5 text-[11px] ${
+                        className={`flex h-5 shrink-0 items-center rounded-[10px] px-1.5 text-[11px] ${
                           isActive ? 'bg-badge' : 'bg-badge-dim'
                         }`}
                       >
                         {thread.unreadCount}
                       </span>
                     )}
-                    <span className="text-[11px] text-dim">
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-[12px] text-dim">
+                      {thread.lastMessageText ?? ''}
+                    </span>
+                    <span className="shrink-0 text-[11px] text-dim">
                       {formatTimeAgo(thread.lastMessageAt)}
                     </span>
                   </div>

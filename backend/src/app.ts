@@ -3,7 +3,7 @@ import { corsMiddleware } from "./middleware/cors";
 import { errorHandler } from "./middleware/errorHandler";
 import authRoutes from "./routes/auth";
 import threadRoutes from "./routes/threads";
-import messageRoutes from "./routes/messages";
+import messageRoutes, { sseService } from "./routes/messages";
 import { requireAuth, requireAuthFlexible } from "./middleware/auth";
 
 const app = express();
@@ -15,6 +15,14 @@ app.use(express.json({ limit: "16kb" }));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/threads/:id/messages", requireAuthFlexible, messageRoutes);
+// SSE stream for thread-level events (must be before requireAuth mount)
+app.get("/api/threads/stream", requireAuthFlexible, (_req, res, next) => {
+  try {
+    sseService.addGlobalClient(res);
+  } catch (err) {
+    next(err);
+  }
+});
 app.use("/api/threads", requireAuth, threadRoutes);
 
 // Health check

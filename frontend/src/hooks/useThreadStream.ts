@@ -36,8 +36,6 @@ export function useThreadStream(threadId?: string) {
         },
       )
 
-      // Refresh thread list to update lastMessageAt
-      qc.invalidateQueries({ queryKey: queryKeys.threads.all })
     })
 
     return () => es.close()

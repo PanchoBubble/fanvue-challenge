@@ -1,5 +1,6 @@
 import { useSearch, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@/lib/auth'
+import { useThreadsStream } from '@/hooks/useThreadsStream'
 import { ThreadList } from './ThreadList'
 import { MessagePanel } from './MessagePanel'
 
@@ -9,6 +10,9 @@ export function ChatLayout() {
   const navigate = useNavigate()
   const setSelectedThreadId = (id: string) =>
     navigate({ to: '/threads', search: { threadId: id } })
+
+  // Subscribe to global thread events (e.g. new thread created)
+  useThreadsStream()
 
   return (
     <div className="flex h-screen flex-col bg-surface-page">

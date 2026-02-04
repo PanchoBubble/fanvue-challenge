@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import type { Message } from '@/types/api'
 
 interface MessageBubbleProps {
@@ -34,12 +33,7 @@ function formatTime(dateStr: string): string {
 
 export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-      className={`flex w-full ${isSelf ? 'justify-end' : 'justify-start'}`}
-    >
+    <div className={`flex w-full ${isSelf ? 'justify-end' : 'justify-start'}`}>
       <div
         className={`flex max-w-[380px] flex-col gap-1 px-3.5 py-2.5 ${
           isSelf
@@ -62,6 +56,6 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
           {formatTime(message.createdAt)}
         </span>
       </div>
-    </motion.div>
+    </div>
   )
 }

@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { ThreadService } from "../services/ThreadService";
 import { validateThreadBody } from "../middleware/validation";
+import { sseService } from "./messages";
 
 const router = Router();
 const threadService = new ThreadService();
@@ -32,6 +33,10 @@ router.post(
     try {
       const { title } = req.body;
       const thread = await threadService.create(title.trim());
+
+      // Broadcast thread creation via SSE
+      await sseService.broadcastThreadCreated(thread);
+
       res.status(201).json({ thread });
     } catch (err) {
       next(err);

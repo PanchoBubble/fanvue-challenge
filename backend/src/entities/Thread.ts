@@ -21,6 +21,9 @@ export class Thread {
   @Column({ type: "timestamptz", default: () => "NOW()" })
   lastMessageAt: Date;
 
+  @Column({ type: "text", nullable: true })
+  lastMessageText: string | null;
+
   @Column({ type: "int", default: 0 })
   unreadCount: number;
 
