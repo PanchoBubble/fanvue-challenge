@@ -56,7 +56,7 @@ export function AuthPage() {
   }
 
   return (
-    <div className="bg-surface-page flex h-screen items-center justify-center">
+    <div className="bg-surface-page flex h-dvh items-center justify-center">
       <div className="flex w-[420px] flex-col items-center gap-8">
         <img src="/logo.svg" alt="Fanvue" className="h-5" />
 

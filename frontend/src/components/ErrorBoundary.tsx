@@ -18,11 +18,11 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.error) {
       return (
-        <div className="flex h-screen flex-col items-center justify-center gap-4 bg-surface-page">
-          <p className="text-sm text-error">Something went wrong</p>
+        <div className="bg-surface-page flex h-dvh flex-col items-center justify-center gap-4">
+          <p className="text-error text-sm">Something went wrong</p>
           <button
             onClick={() => this.setState({ error: null })}
-            className="rounded-lg border border-border-card px-4 py-2 text-sm text-dim hover:bg-white/5 transition-colors"
+            className="border-border-card text-dim rounded-lg border px-4 py-2 text-sm transition-colors hover:bg-white/5"
           >
             Try again
           </button>

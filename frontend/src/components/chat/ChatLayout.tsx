@@ -44,7 +44,7 @@ export function ChatLayout() {
   }, [qc, setSelectedThreadId])
 
   return (
-    <div className="bg-surface-page flex h-screen flex-col">
+    <div className="bg-surface-page flex h-dvh flex-col">
       {/* Header */}
       <header className="border-border-subtle bg-surface-page flex h-14 shrink-0 items-center justify-between border-b px-5">
         <img src="/logo.svg" alt="Fanvue" className="h-5" />

@@ -23,5 +23,5 @@ html {
 }
 
 body {
-  @apply min-h-screen;
+  @apply min-h-dvh;
 }
