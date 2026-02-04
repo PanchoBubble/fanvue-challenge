@@ -4,9 +4,10 @@ import { useSendMessage } from '@/hooks/useMessages'
 
 interface MessageInputProps {
   threadId: string
+  onSent?: () => void
 }
 
-export function MessageInput({ threadId }: MessageInputProps) {
+export function MessageInput({ threadId, onSent }: MessageInputProps) {
   const [text, setText] = useState('')
   const sendMessage = useSendMessage(threadId)
 
@@ -14,7 +15,10 @@ export function MessageInput({ threadId }: MessageInputProps) {
     e.preventDefault()
     if (!text.trim() || sendMessage.isPending) return
     sendMessage.mutate(text.trim(), {
-      onSuccess: () => setText(''),
+      onSuccess: () => {
+        setText('')
+        onSent?.()
+      },
     })
   }
 

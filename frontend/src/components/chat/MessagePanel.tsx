@@ -36,7 +36,12 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
   const prevFirstId = useRef<string>('')
   const prevCount = useRef(0)
   const prevScrollHeight = useRef(0)
+  const pendingSend = useRef(false)
   useThreadStream(threadId)
+
+  const handleMessageSent = () => {
+    pendingSend.current = true
+  }
 
   const thread = threads.find((t) => t.id === threadId)
 
@@ -113,8 +118,12 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
         if (heightDiff > 0) {
           el.scrollTop += heightDiff
         }
+      } else if (pendingSend.current) {
+        // User just sent a message → instant scroll to bottom
+        pendingSend.current = false
+        virtualizer.scrollToIndex(messages.length - 1, { align: 'end' })
       } else {
-        // New message at end → smooth scroll to bottom
+        // New message from others → smooth scroll to bottom
         virtualizer.scrollToIndex(messages.length - 1, {
           align: 'end',
           behavior: 'smooth',
@@ -279,7 +288,7 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
       </div>
 
       {/* Input */}
-      <MessageInput threadId={threadId} />
+      <MessageInput threadId={threadId} onSent={handleMessageSent} />
     </div>
   )
 }

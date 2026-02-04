@@ -33,7 +33,9 @@ export function useSendMessage(threadId: string) {
         body: JSON.stringify({ text }),
       }).then((r) => r.message),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.messages.byThread(threadId) })
+      // SSE already adds the message to the cache in real-time.
+      // Invalidating messages here causes a full refetch that races with SSE,
+      // interrupting scroll-to-bottom when the user is scrolled up.
       qc.invalidateQueries({ queryKey: queryKeys.threads.all })
     },
   })
