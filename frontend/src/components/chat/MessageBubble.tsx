@@ -37,23 +37,33 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
       <div
         className={`flex max-w-[380px] flex-col gap-1 px-3.5 py-2.5 ${
           isSelf
-            ? 'rounded-xl rounded-tr-none bg-surface-active'
-            : 'rounded-xl rounded-tl-none bg-surface-page'
+            ? 'bg-surface-active rounded-xl rounded-tr-none'
+            : 'bg-surface-page rounded-xl rounded-tl-none'
         }`}
       >
-        {!isSelf && (
+        <div className="flex justify-between">
+          {!isSelf ? (
+            <span
+              className="text-[11px] font-semibold"
+              style={{ color: authorColor(message.author) }}
+            >
+              {message.author}
+            </span>
+          ) : (
+            <div> </div>
+          )}
+
           <span
-            className="text-[11px] font-semibold"
-            style={{ color: authorColor(message.author) }}
+            className={`text-[10px] ${isSelf ? 'text-white/40' : 'text-dim'}`}
           >
-            {message.author}
+            #{message.messageNumber}
           </span>
-        )}
+        </div>
         <p className="text-sm">{message.text}</p>
         <span
           className={`text-[10px] ${isSelf ? 'text-white/40' : 'text-dim'}`}
         >
-          {formatTime(message.createdAt)}
+          Sent at {formatTime(message.createdAt)}
         </span>
       </div>
     </div>

@@ -3,15 +3,11 @@ import { apiFetch } from '@/lib/api'
 import { queryKeys } from '@/lib/queryKeys'
 import type { Thread } from '@/types/api'
 
-export function useThreads(search?: string) {
+export function useThreads() {
   return useQuery({
-    queryKey: queryKeys.threads.list(search),
-    queryFn: () => {
-      const params = search ? `?search=${encodeURIComponent(search)}` : ''
-      return apiFetch<{ threads: Thread[] }>(`/api/threads${params}`).then(
-        (r) => r.threads,
-      )
-    },
+    queryKey: queryKeys.threads.list(),
+    queryFn: () =>
+      apiFetch<{ threads: Thread[] }>('/api/threads').then((r) => r.threads),
   })
 }
 

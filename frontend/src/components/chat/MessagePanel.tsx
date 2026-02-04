@@ -228,7 +228,7 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
       />
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="scrollbar-thin flex-1 overflow-y-auto">
         {isLoading && (
           <div className="flex flex-col gap-4 p-5">
             {Array.from({ length: 4 }).map((_, i) => (

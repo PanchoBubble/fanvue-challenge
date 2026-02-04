@@ -25,3 +25,55 @@ html {
 body {
   @apply min-h-dvh;
 }
+
+/* New-message pulse dot — 2s animation */
+@keyframes ping-brand {
+  0% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-ping-brand {
+  animation: ping-brand 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+  animation-duration: 1s;
+}
+
+/* Minimal scrollbar — visible only on hover/scroll */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s;
+}
+
+.scrollbar-thin:hover,
+.scrollbar-thin:active {
+  scrollbar-color: var(--color-brand) transparent;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+  transition: background 0.3s;
+}
+
+.scrollbar-thin:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-brand) 50%, transparent);
+}
+
+.scrollbar-thin:hover::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand);
+}

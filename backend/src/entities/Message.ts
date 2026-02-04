@@ -25,6 +25,9 @@ export class Message {
   @Column({ type: 'text' })
   text: string
 
+  @Column({ type: 'int' })
+  messageNumber: number
+
   @Column({ length: 100 })
   author: string
 

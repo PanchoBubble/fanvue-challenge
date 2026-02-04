@@ -19,6 +19,7 @@ export interface Message {
   threadId: string
   text: string
   author: string
+  messageNumber: number
   createdAt: string
 }
 

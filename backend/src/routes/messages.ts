@@ -51,12 +51,18 @@ router.post(
       const { id } = req.params
       const { text } = req.body
 
-      // Verify thread exists
-      await threadService.getById(id)
+      // Get thread (also verifies it exists)
+      const thread = await threadService.getById(id)
 
       // Author comes from JWT token
       const author = req.user!.username
-      const message = await messageService.create(id, text, author)
+      const messageNumber = thread.messageCount + 1
+      const message = await messageService.create(
+        id,
+        text,
+        author,
+        messageNumber,
+      )
 
       // Update thread metadata
       const updatedThread = await threadService.updateLastMessage(

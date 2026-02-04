@@ -1,7 +1,12 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Plus, Check, X } from 'lucide-react'
-import { useThreads, useCreateThread, useUpdateThread, useDeleteThread } from '@/hooks/useThreads'
+import {
+  useThreads,
+  useCreateThread,
+  useUpdateThread,
+  useDeleteThread,
+} from '@/hooks/useThreads'
 import { ThreadMenu } from './ThreadMenu'
 import { ConfirmModal } from './ConfirmModal'
 
@@ -21,9 +26,17 @@ function formatTimeAgo(dateStr: string): string {
   return `${days}d ago`
 }
 
-export function ThreadList({ selectedThreadId, onSelectThread }: ThreadListProps) {
+export function ThreadList({
+  selectedThreadId,
+  onSelectThread,
+}: ThreadListProps) {
   const [search, setSearch] = useState('')
-  const { data: threads = [], isLoading } = useThreads(search || undefined)
+  const { data: allThreads = [], isLoading } = useThreads()
+  const threads = search
+    ? allThreads.filter((t) =>
+        t.title.toLowerCase().includes(search.toLowerCase()),
+      )
+    : allThreads
   const createThread = useCreateThread()
   const updateThread = useUpdateThread()
   const deleteThread = useDeleteThread()
@@ -37,7 +50,54 @@ export function ThreadList({ selectedThreadId, onSelectThread }: ThreadListProps
   const editInputRef = useRef<HTMLInputElement>(null)
 
   // Delete state
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string
+    title: string
+  } | null>(null)
+
+  // Track flashing dots for threads that just received a new message
+  const [flashingIds, setFlashingIds] = useState<Set<string>>(new Set())
+  const [prevTimestamps, setPrevTimestamps] = useState<Record<string, string>>(
+    {},
+  )
+
+  // Detect new messages (adjust-state-during-render pattern — no effect, no ref reads)
+  let timestampsChanged = false
+  for (const t of threads) {
+    if (prevTimestamps[t.id] !== t.lastMessageAt) {
+      timestampsChanged = true
+      break
+    }
+  }
+  if (
+    !timestampsChanged &&
+    Object.keys(prevTimestamps).length !== threads.length
+  ) {
+    timestampsChanged = true
+  }
+
+  if (timestampsChanged) {
+    const newlyFlashing: string[] = []
+    for (const t of threads) {
+      const prev = prevTimestamps[t.id]
+      if (prev && prev !== t.lastMessageAt && !flashingIds.has(t.id)) {
+        newlyFlashing.push(t.id)
+      }
+    }
+    const next: Record<string, string> = {}
+    for (const t of threads) next[t.id] = t.lastMessageAt
+    setPrevTimestamps(next)
+    if (newlyFlashing.length > 0) {
+      setFlashingIds(new Set([...flashingIds, ...newlyFlashing]))
+    }
+  }
+
+  // Auto-clear flashing dots after 2s
+  useEffect(() => {
+    if (flashingIds.size === 0) return
+    const timer = setTimeout(() => setFlashingIds(new Set()), 2000)
+    return () => clearTimeout(timer)
+  }, [flashingIds])
 
   useEffect(() => {
     if (editingId) {
@@ -95,24 +155,27 @@ export function ThreadList({ selectedThreadId, onSelectThread }: ThreadListProps
   }
 
   return (
-    <div className="flex w-full flex-col gap-3 bg-surface-page px-4 py-3">
+    <div className="bg-surface-page flex w-full flex-col gap-3 px-4 py-3">
       {/* Search */}
-      <div className="flex h-10 items-center gap-2 border-b border-border-subtle bg-surface-page px-3 focus-within:border-brand">
-        <Search className="h-4 w-4 text-placeholder" />
+      <div className="border-border-subtle bg-surface-page focus-within:border-brand flex h-10 items-center gap-2 border-b px-3">
+        <Search className="text-placeholder h-4 w-4" />
         <input
           type="text"
           placeholder="Search threads..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-placeholder"
+          className="placeholder:text-placeholder flex-1 bg-transparent text-[13px] text-white outline-none"
         />
       </div>
 
       {/* Thread list */}
-      <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
+      <div className="scrollbar-thin flex flex-1 flex-col gap-0.5 overflow-y-auto">
         {isLoading &&
           Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex h-16 animate-pulse items-center gap-3 rounded-lg p-3">
+            <div
+              key={i}
+              className="flex h-16 animate-pulse items-center gap-3 rounded-lg p-3"
+            >
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="h-3.5 w-3/4 rounded bg-white/10" />
                 <div className="h-2.5 w-1/3 rounded bg-white/5" />
@@ -120,12 +183,13 @@ export function ThreadList({ selectedThreadId, onSelectThread }: ThreadListProps
             </div>
           ))}
         {!isLoading && threads.length === 0 && (
-          <p className="py-8 text-center text-sm text-dim">No threads yet</p>
+          <p className="text-dim py-8 text-center text-sm">No threads yet</p>
         )}
         <AnimatePresence initial={false}>
           {threads.map((thread) => {
             const isActive = thread.id === selectedThreadId
             const isEditing = editingId === thread.id
+            const isFlashing = flashingIds.has(thread.id)
             return (
               <motion.button
                 key={thread.id}
@@ -135,12 +199,18 @@ export function ThreadList({ selectedThreadId, onSelectThread }: ThreadListProps
                 exit={{ opacity: 0, x: -12 }}
                 transition={{ duration: 0.15 }}
                 onClick={() => !isEditing && onSelectThread(thread.id)}
-                className={`group flex h-16 cursor-pointer items-center gap-3 rounded-lg p-3 text-left transition-colors outline-surface-active ${
+                className={`group outline-surface-active relative flex h-16 cursor-pointer items-center gap-3 rounded-lg p-3 text-left transition-colors ${
                   isActive
-                    ? 'bg-surface-active outline outline-1 outline-surface-active'
+                    ? 'bg-surface-active outline-surface-active outline outline-1'
                     : 'hover:bg-white/5'
                 }`}
               >
+                {isFlashing && (
+                  <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                    <span className="animate-ping-brand bg-brand absolute inline-flex h-full w-full rounded-full opacity-75" />
+                    <span className="bg-brand relative inline-flex h-2.5 w-2.5 rounded-full" />
+                  </span>
+                )}
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex items-center justify-between gap-2">
                     {isEditing ? (
@@ -156,7 +226,7 @@ export function ThreadList({ selectedThreadId, onSelectThread }: ThreadListProps
                         }}
                         onBlur={() => handleEditSave(thread.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="min-w-0 flex-1 rounded border border-brand bg-transparent px-1.5 py-0.5 text-sm text-white outline-none"
+                        className="border-brand min-w-0 flex-1 rounded border bg-transparent px-1.5 py-0.5 text-sm text-white outline-none"
                       />
                     ) : (
                       <span
@@ -181,16 +251,21 @@ export function ThreadList({ selectedThreadId, onSelectThread }: ThreadListProps
                             setEditingId(thread.id)
                             setEditTitle(thread.title)
                           }}
-                          onDelete={() => setDeleteTarget({ id: thread.id, title: thread.title })}
+                          onDelete={() =>
+                            setDeleteTarget({
+                              id: thread.id,
+                              title: thread.title,
+                            })
+                          }
                         />
                       )}
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-[12px] text-dim">
+                    <span className="text-dim truncate text-[12px]">
                       {thread.lastMessageText ?? ''}
                     </span>
-                    <span className="shrink-0 text-[11px] text-dim">
+                    <span className="text-dim shrink-0 text-[11px]">
                       {formatTimeAgo(thread.lastMessageAt)}
                     </span>
                   </div>
@@ -214,13 +289,13 @@ export function ThreadList({ selectedThreadId, onSelectThread }: ThreadListProps
               if (e.key === 'Enter') handleConfirm()
               if (e.key === 'Escape') handleCancel()
             }}
-            className="h-10 rounded-lg border border-border-card bg-surface-page px-3 text-sm text-white placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-brand"
+            className="border-border-card bg-surface-page placeholder:text-placeholder focus:ring-brand h-10 rounded-lg border px-3 text-sm text-white focus:ring-2 focus:outline-none"
           />
           <div className="flex gap-2">
             <button
               onClick={handleConfirm}
               disabled={createThread.isPending || !newTitle.trim()}
-              className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-brand font-semibold text-surface-page text-sm transition-colors hover:brightness-110 disabled:opacity-50"
+              className="bg-brand text-surface-page flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition-colors hover:brightness-110 disabled:opacity-50"
             >
               <Check className="h-4 w-4" />
               Confirm
@@ -228,7 +303,7 @@ export function ThreadList({ selectedThreadId, onSelectThread }: ThreadListProps
             <button
               onClick={handleCancel}
               disabled={createThread.isPending}
-              className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border-card font-semibold text-dim text-sm transition-colors hover:bg-white/5 disabled:opacity-50"
+              className="border-border-card text-dim flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border text-sm font-semibold transition-colors hover:bg-white/5 disabled:opacity-50"
             >
               <X className="h-4 w-4" />
               Cancel
@@ -238,7 +313,7 @@ export function ThreadList({ selectedThreadId, onSelectThread }: ThreadListProps
       ) : (
         <button
           onClick={handleStartCreate}
-          className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-surface-active font-semibold text-white text-sm transition-colors hover:bg-white/5"
+          className="border-surface-active flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border text-sm font-semibold text-white transition-colors hover:bg-white/5"
         >
           <Plus className="h-4 w-4" />
           New Thread

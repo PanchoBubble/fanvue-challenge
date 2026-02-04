@@ -99,8 +99,9 @@ export async function seed(): Promise<string> {
 
     // Generate messages in batches for performance
     const BATCH_SIZE = 1000
-    const baseTime = new Date('2024-01-01T00:00:00Z').getTime()
-    let lastCreatedAt = new Date(baseTime)
+    let currentTime = new Date('2024-01-01T00:00:00Z').getTime()
+    let lastCreatedAt = new Date(currentTime)
+    let lastText = ''
 
     for (let i = 0; i < def.messageCount; i += BATCH_SIZE) {
       const batchEnd = Math.min(i + BATCH_SIZE, def.messageCount)
@@ -108,13 +109,15 @@ export async function seed(): Promise<string> {
 
       for (let j = i; j < batchEnd; j++) {
         // Spread messages over time (1-5 minutes apart)
-        const offset = (j + 1) * (60_000 + Math.random() * 240_000)
-        lastCreatedAt = new Date(baseTime + offset)
+        currentTime += 60_000 + Math.random() * 240_000
+        lastCreatedAt = new Date(currentTime)
+        lastText = randomItem(SAMPLE_MESSAGES)
 
         batch.push({
           threadId: savedThread.id,
-          text: randomItem(SAMPLE_MESSAGES),
+          text: lastText,
           author: randomItem(AUTHORS),
+          messageNumber: j + 1,
           createdAt: lastCreatedAt,
         })
       }
@@ -127,9 +130,10 @@ export async function seed(): Promise<string> {
         .execute()
     }
 
-    // Update thread's lastMessageAt
+    // Update thread's lastMessageAt and lastMessageText
     await threadRepo.update(savedThread.id, {
       lastMessageAt: lastCreatedAt,
+      lastMessageText: lastText,
     })
   }
 

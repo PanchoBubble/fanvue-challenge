@@ -7,6 +7,7 @@ import { User } from '../entities/User'
 import { CreateSchema1700000000000 } from '../migrations/1700000000000-CreateSchema'
 import { AddUsers1700000000001 } from '../migrations/1700000000001-AddUsers'
 import { AddLastMessageText1700000000002 } from '../migrations/1700000000002-AddLastMessageText'
+import { AddMessageNumber1700000000003 } from '../migrations/1700000000003-AddMessageNumber'
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -20,6 +21,7 @@ export const AppDataSource = new DataSource({
     CreateSchema1700000000000,
     AddUsers1700000000001,
     AddLastMessageText1700000000002,
+    AddMessageNumber1700000000003,
   ],
   synchronize: false,
   logging: env.nodeEnv === 'development',

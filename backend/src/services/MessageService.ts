@@ -56,11 +56,13 @@ export class MessageService {
     threadId: string,
     text: string,
     author: string,
+    messageNumber: number,
   ): Promise<Message> {
     const message = this.repo.create({
       threadId,
       text: text.trim(),
       author,
+      messageNumber,
     })
 
     return this.repo.save(message)
