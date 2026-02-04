@@ -1,0 +1,9 @@
+fanvue-api.juandl.com {
+	handle /api/* {
+		reverse_proxy api:3001
+	}
+
+	handle {
+		reverse_proxy frontend:80
+	}
+}
