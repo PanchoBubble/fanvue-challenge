@@ -12,6 +12,9 @@
   --color-error: #ff4444;
   --color-dim: #ffffff99;
   --color-placeholder: #ffffff55;
+  --color-surface-active: #203522;
+  --color-badge: #ffffff22;
+  --color-badge-dim: #ffffff15;
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 

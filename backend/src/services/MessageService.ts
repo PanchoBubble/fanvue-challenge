@@ -24,13 +24,13 @@ export class MessageService {
     const qb = this.repo
       .createQueryBuilder("msg")
       .where("msg.threadId = :threadId", { threadId })
-      .orderBy("msg.createdAt", "ASC")
+      .orderBy("msg.createdAt", "DESC")
       .limit(limit + 1); // Fetch one extra to determine if there's a next page
 
     if (cursor) {
       try {
         const cursorDate = decodeCursor(cursor);
-        qb.andWhere("msg.createdAt > :cursor", { cursor: cursorDate });
+        qb.andWhere("msg.createdAt < :cursor", { cursor: cursorDate });
       } catch {
         throw new AppError(400, "Invalid cursor");
       }
@@ -43,10 +43,13 @@ export class MessageService {
       messages.pop(); // Remove the extra item
     }
 
+    // Reverse so items are in chronological order (oldest first)
+    messages.reverse();
+
     return {
       items: messages,
       nextCursor: hasMore
-        ? encodeCursor(messages[messages.length - 1].createdAt)
+        ? encodeCursor(messages[0].createdAt)
         : null,
     };
   }

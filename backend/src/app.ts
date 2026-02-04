@@ -14,8 +14,8 @@ app.use(express.json({ limit: "16kb" }));
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/threads", requireAuth, threadRoutes);
 app.use("/api/threads/:id/messages", requireAuthFlexible, messageRoutes);
+app.use("/api/threads", requireAuth, threadRoutes);
 
 // Health check
 app.get("/api/health", (_req, res) => {

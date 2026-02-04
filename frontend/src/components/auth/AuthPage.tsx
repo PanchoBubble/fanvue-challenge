@@ -1,81 +1,146 @@
-import { useState } from 'react'
+import { type FormEvent, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LoginForm } from './LoginForm'
-import { RegisterForm } from './RegisterForm'
+import { useNavigate } from '@tanstack/react-router'
+import { useAuth } from '@/lib/auth'
+import { ApiError } from '@/lib/api'
 
-type Tab = 'login' | 'register'
+type Mode = 'login' | 'register'
 
 export function AuthPage() {
-  const [tab, setTab] = useState<Tab>('login')
+  const { login, register } = useAuth()
+  const navigate = useNavigate()
+  const [mode, setMode] = useState<Mode>('login')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const isRegister = mode === 'register'
+
+  function switchMode() {
+    setMode(isRegister ? 'login' : 'register')
+    setError('')
+    setConfirmPassword('')
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    setError('')
+
+    if (isRegister && password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    setLoading(true)
+    try {
+      if (isRegister) {
+        await register(username, password)
+      } else {
+        await login(username, password)
+      }
+      navigate({ to: '/' })
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : isRegister
+            ? 'Registration failed'
+            : 'Invalid username or password',
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="flex h-screen items-center justify-center bg-surface-page">
       <div className="flex w-[420px] flex-col items-center gap-8">
-        {/* Logo */}
         <img src="/logo.svg" alt="Fanvue" className="h-5" />
 
-        {/* Auth Card */}
-        <div className="w-full overflow-hidden rounded-2xl border border-border-card bg-surface-card">
-          {/* Tabs */}
-          <div className="flex h-12">
-            <button
-              type="button"
-              onClick={() => setTab('login')}
-              className={`relative flex flex-1 items-center justify-center text-[15px] font-semibold transition-colors ${
-                tab === 'login' ? 'text-brand' : 'text-dim'
-              }`}
-            >
-              Login
-              {tab === 'login' && (
-                <motion.div
-                  layoutId="auth-tab-indicator"
-                  className="absolute bottom-0 left-0 right-0 h-[3px] bg-brand"
-                />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab('register')}
-              className={`relative flex flex-1 items-center justify-center text-[15px] font-medium transition-colors ${
-                tab === 'register' ? 'text-brand' : 'text-dim'
-              }`}
-            >
-              Register
-              {tab === 'register' && (
-                <motion.div
-                  layoutId="auth-tab-indicator"
-                  className="absolute bottom-0 left-0 right-0 h-[3px] bg-brand"
-                />
-              )}
-            </button>
-          </div>
+        <div className="w-full rounded-2xl border border-border-card bg-surface-card p-8">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="auth-username" className="text-[13px] font-medium text-white">
+                Username
+              </label>
+              <input
+                id="auth-username"
+                type="text"
+                placeholder={isRegister ? 'Choose a username' : 'Enter your username'}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                className="h-11 rounded-lg border border-border-input bg-surface-input px-3.5 text-sm text-white placeholder:text-placeholder outline-none focus:border-brand transition-colors"
+              />
+            </div>
 
-          {/* Form Area */}
-          <div className="relative p-8">
-            <AnimatePresence mode="wait">
-              {tab === 'login' ? (
+            <div className="flex flex-col gap-2">
+              <label htmlFor="auth-password" className="text-[13px] font-medium text-white">
+                Password
+              </label>
+              <input
+                id="auth-password"
+                type="password"
+                placeholder={isRegister ? 'Choose a password' : '••••••••'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="h-11 rounded-lg border border-border-input bg-surface-input px-3.5 text-sm text-white placeholder:text-placeholder outline-none focus:border-brand transition-colors"
+              />
+            </div>
+
+            <AnimatePresence initial={false}>
+              {isRegister && (
                 <motion.div
-                  key="login"
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: 20, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  key="confirm-password"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  className="overflow-hidden"
                 >
-                  <LoginForm />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="register"
-                  initial={{ x: 20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -20, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <RegisterForm />
+                  <div className="flex flex-col gap-2 pt-0">
+                    <label htmlFor="auth-confirm-password" className="text-[13px] font-medium text-white">
+                      Confirm Password
+                    </label>
+                    <input
+                      id="auth-confirm-password"
+                      type="password"
+                      placeholder="Confirm your password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      className="h-11 rounded-lg border border-border-input bg-surface-input px-3.5 text-sm text-white placeholder:text-placeholder outline-none focus:border-brand transition-colors"
+                    />
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+
+            {error && <p className="text-[13px] text-error">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex h-[46px] items-center justify-center rounded-lg bg-brand text-[15px] font-semibold text-surface-page transition-opacity disabled:opacity-60"
+            >
+              {loading
+                ? isRegister ? 'Creating account…' : 'Signing in…'
+                : isRegister ? 'Create Account' : 'Sign In'}
+            </button>
+
+            <button
+              type="button"
+              onClick={switchMode}
+              className="text-[13px] text-dim hover:text-white transition-colors"
+            >
+              {isRegister
+                ? 'Already have an account? Sign in'
+                : "Don't have an account? Register"}
+            </button>
+          </form>
         </div>
       </div>
     </div>

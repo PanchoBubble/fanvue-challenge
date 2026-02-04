@@ -8,8 +8,6 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY src/ ./src/
 
-RUN npm run build
-
 EXPOSE 3001
 
-CMD ["sh", "-c", "npm run migration:run && npm run seed && npm start"]
+CMD ["sh", "-c", "npm run build && npm run migration:run && npm run seed && npm run dev"]
