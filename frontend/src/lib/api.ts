@@ -27,7 +27,7 @@ export async function apiFetch<T>(
     },
   })
 
-  if (res.status === 401) {
+  if (res.status === 401 && !path.startsWith('/api/auth/')) {
     useAuthStore.getState().logout()
     window.location.href = '/auth'
     throw new ApiError(401, 'Unauthorized')
