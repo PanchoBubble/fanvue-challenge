@@ -1,0 +1,9 @@
+{
+  "frontend/src/**/*.{ts,tsx}": [
+    "sh -c 'cd frontend && node_modules/.bin/eslint --fix --config eslint.config.js \"$@\"' --",
+    "sh -c 'cd frontend && node_modules/.bin/prettier --write \"$@\"' --"
+  ],
+  "backend/src/**/*.ts": [
+    "sh -c 'cd backend && node_modules/.bin/prettier --write \"$@\"' --"
+  ]
+}

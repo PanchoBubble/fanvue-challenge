@@ -1,7 +1,7 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm'
 
 export class CreateSchema1700000000000 implements MigrationInterface {
-  name = "CreateSchema1700000000000";
+  name = 'CreateSchema1700000000000'
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -15,7 +15,7 @@ export class CreateSchema1700000000000 implements MigrationInterface {
         "updatedAt" timestamptz NOT NULL DEFAULT NOW(),
         CONSTRAINT "PK_threads" PRIMARY KEY ("id")
       )
-    `);
+    `)
 
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "messages" (
@@ -28,23 +28,23 @@ export class CreateSchema1700000000000 implements MigrationInterface {
         CONSTRAINT "FK_messages_thread" FOREIGN KEY ("threadId")
           REFERENCES "threads"("id") ON DELETE CASCADE
       )
-    `);
+    `)
 
     // Composite index for cursor-based pagination (threadId + createdAt)
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "idx_message_thread_created"
         ON "messages" ("threadId", "createdAt")
-    `);
+    `)
 
     // Index for ordering threads by last activity
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "idx_thread_last_message"
         ON "threads" ("lastMessageAt" DESC)
-    `);
+    `)
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TABLE IF EXISTS "messages"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "threads"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "messages"`)
+    await queryRunner.query(`DROP TABLE IF EXISTS "threads"`)
   }
 }

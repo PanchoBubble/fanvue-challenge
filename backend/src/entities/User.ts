@@ -4,20 +4,20 @@ import {
   Column,
   CreateDateColumn,
   Index,
-} from "typeorm";
+} from 'typeorm'
 
-@Entity("users")
+@Entity('users')
 export class User {
-  @PrimaryGeneratedColumn("uuid")
-  id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string
 
   @Index({ unique: true })
   @Column({ length: 100 })
-  username: string;
+  username: string
 
   @Column()
-  passwordHash: string;
+  passwordHash: string
 
-  @CreateDateColumn({ type: "timestamptz" })
-  createdAt: Date;
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date
 }

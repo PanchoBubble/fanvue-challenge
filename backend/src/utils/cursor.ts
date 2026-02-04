@@ -7,14 +7,14 @@
  */
 
 export function encodeCursor(createdAt: Date): string {
-  return Buffer.from(createdAt.toISOString()).toString("base64url");
+  return Buffer.from(createdAt.toISOString()).toString('base64url')
 }
 
 export function decodeCursor(cursor: string): Date {
-  const decoded = Buffer.from(cursor, "base64url").toString("utf-8");
-  const date = new Date(decoded);
+  const decoded = Buffer.from(cursor, 'base64url').toString('utf-8')
+  const date = new Date(decoded)
   if (isNaN(date.getTime())) {
-    throw new Error("Invalid cursor");
+    throw new Error('Invalid cursor')
   }
-  return date;
+  return date
 }

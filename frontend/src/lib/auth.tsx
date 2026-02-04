@@ -38,15 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(loadUser)
   const navigate = useNavigate()
 
-  const handleAuth = useCallback(
-    (data: AuthResponse) => {
-      localStorage.setItem(TOKEN_KEY, data.token)
-      localStorage.setItem(USER_KEY, JSON.stringify(data.user))
-      setToken(data.token)
-      setUser(data.user)
-    },
-    [],
-  )
+  const handleAuth = useCallback((data: AuthResponse) => {
+    localStorage.setItem(TOKEN_KEY, data.token)
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+    setToken(data.token)
+    setUser(data.user)
+  }, [])
 
   const login = useCallback(
     async (username: string, password: string) => {
@@ -93,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')

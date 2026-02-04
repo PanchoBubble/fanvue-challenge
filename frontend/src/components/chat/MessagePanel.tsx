@@ -3,7 +3,11 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { ChevronLeft } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useMessages } from '@/hooks/useMessages'
-import { useThreads, useUpdateThread, useDeleteThread } from '@/hooks/useThreads'
+import {
+  useThreads,
+  useUpdateThread,
+  useDeleteThread,
+} from '@/hooks/useThreads'
 import { useThreadStream } from '@/hooks/useThreadStream'
 import { MessageBubble } from './MessageBubble'
 import { MessageInput } from './MessageInput'
@@ -83,6 +87,7 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
     prevScrollHeight.current = 0
   }
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: messages.length,
     getScrollElement: () => scrollRef.current,
@@ -171,16 +176,22 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
                 if (e.key === 'Escape') setIsEditingTitle(false)
               }}
               onBlur={handleEditSave}
-              className="min-w-0 rounded border border-brand bg-transparent px-1.5 py-0.5 text-base font-semibold text-white outline-none"
+              className="border-brand min-w-0 rounded border bg-transparent px-1.5 py-0.5 text-base font-semibold text-white outline-none"
             />
           ) : (
-            <h2 className="truncate text-base font-semibold">{thread?.title ?? ''}</h2>
+            <h2 className="truncate text-base font-semibold">
+              {thread?.title ?? ''}
+            </h2>
           )}
           {thread && !isEditingTitle && (
             <p className="text-dim truncate text-xs">
-              {thread.messageCount} {thread.messageCount === 1 ? 'message' : 'messages'}
+              {thread.messageCount}{' '}
+              {thread.messageCount === 1 ? 'message' : 'messages'}
               {thread.lastMessageAt && (
-                <span> · last {new Date(thread.lastMessageAt).toLocaleString()}</span>
+                <span>
+                  {' '}
+                  · last {new Date(thread.lastMessageAt).toLocaleString()}
+                </span>
               )}
             </p>
           )}

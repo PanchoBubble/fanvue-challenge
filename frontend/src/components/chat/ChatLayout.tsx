@@ -9,14 +9,19 @@ import { MessagePanel } from './MessagePanel'
 
 export function ChatLayout() {
   const { user, logout } = useAuth()
-  const { threadId: selectedThreadId } = useSearch({ from: '/_authenticated/threads' })
+  const { threadId: selectedThreadId } = useSearch({
+    from: '/_authenticated/threads',
+  })
   const navigate = useNavigate()
   const qc = useQueryClient()
   const selectedRef = useRef(selectedThreadId)
-  selectedRef.current = selectedThreadId
+  useEffect(() => {
+    selectedRef.current = selectedThreadId
+  }, [selectedThreadId])
 
   const setSelectedThreadId = useCallback(
-    (id: string) => navigate({ to: '/threads', search: id ? { threadId: id } : {} }),
+    (id: string) =>
+      navigate({ to: '/threads', search: id ? { threadId: id } : {} }),
     [navigate],
   )
 
@@ -38,15 +43,15 @@ export function ChatLayout() {
   }, [qc, setSelectedThreadId])
 
   return (
-    <div className="flex h-screen flex-col bg-surface-page">
+    <div className="bg-surface-page flex h-screen flex-col">
       {/* Header */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-subtle px-5 bg-surface-page">
+      <header className="border-border-subtle bg-surface-page flex h-14 shrink-0 items-center justify-between border-b px-5">
         <img src="/logo.svg" alt="Fanvue" className="h-5" />
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium">{user?.username}</span>
           <button
             onClick={logout}
-            className="flex h-[34px] cursor-pointer items-center rounded-md border border-white/[0.13] px-3.5 text-sm text-dim hover:bg-white/5 transition-colors"
+            className="text-dim flex h-[34px] cursor-pointer items-center rounded-md border border-white/[0.13] px-3.5 text-sm transition-colors hover:bg-white/5"
           >
             Log out
           </button>
@@ -55,13 +60,17 @@ export function ChatLayout() {
 
       {/* Body */}
       <div className="flex min-h-0 flex-1">
-        <div className={`${selectedThreadId ? 'hidden md:flex' : 'flex'} w-full md:w-80 shrink-0`}>
+        <div
+          className={`${selectedThreadId ? 'hidden md:flex' : 'flex'} w-full shrink-0 md:w-80`}
+        >
           <ThreadList
             selectedThreadId={selectedThreadId}
             onSelectThread={setSelectedThreadId}
           />
         </div>
-        <div className={`${selectedThreadId ? 'flex' : 'hidden md:flex'} min-w-0 flex-1`}>
+        <div
+          className={`${selectedThreadId ? 'flex' : 'hidden md:flex'} min-w-0 flex-1`}
+        >
           <MessagePanel
             threadId={selectedThreadId}
             onBack={() => navigate({ to: '/threads' })}

@@ -1,7 +1,7 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm'
 
 export class AddUsers1700000000001 implements MigrationInterface {
-  name = "AddUsers1700000000001";
+  name = 'AddUsers1700000000001'
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -13,10 +13,10 @@ export class AddUsers1700000000001 implements MigrationInterface {
         CONSTRAINT "PK_users" PRIMARY KEY ("id"),
         CONSTRAINT "UQ_users_username" UNIQUE ("username")
       )
-    `);
+    `)
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TABLE IF EXISTS "users"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "users"`)
   }
 }
