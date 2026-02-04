@@ -129,6 +129,14 @@ export class SSEService {
   }
 
   /**
+   * Broadcast a thread deletion event to all global SSE clients.
+   */
+  async broadcastThreadDeleted(threadId: string): Promise<void> {
+    const payload = JSON.stringify({ event: "thread_deleted", data: { id: threadId } });
+    await this.publisher.publish(GLOBAL_CHANNEL, payload);
+  }
+
+  /**
    * Broadcast a new message to all SSE clients watching a thread.
    * Publishes to Redis so it works across multiple server instances.
    */

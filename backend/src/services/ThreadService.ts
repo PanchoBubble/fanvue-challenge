@@ -37,6 +37,17 @@ export class ThreadService {
     return this.repo.save(thread);
   }
 
+  async update(id: string, title: string): Promise<Thread> {
+    const thread = await this.getById(id);
+    thread.title = title;
+    return this.repo.save(thread);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.getById(id);
+    await this.repo.delete(id);
+  }
+
   async updateLastMessage(
     threadId: string,
     lastMessageAt: Date,

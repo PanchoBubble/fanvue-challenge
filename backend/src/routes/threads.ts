@@ -44,4 +44,37 @@ router.post(
   }
 );
 
+/**
+ * PATCH /api/threads/:id
+ * Updates a thread's title.
+ * Body: { title: string }
+ */
+router.patch(
+  "/:id",
+  validateThreadBody,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const thread = await threadService.update(req.params.id, req.body.title.trim());
+      await sseService.broadcastThreadUpdated(thread);
+      res.json({ thread });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * DELETE /api/threads/:id
+ * Deletes a thread and its messages.
+ */
+router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await threadService.delete(req.params.id);
+    await sseService.broadcastThreadDeleted(req.params.id);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
