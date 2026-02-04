@@ -1,6 +1,5 @@
-import { type FormEvent, useState } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useNavigate } from '@tanstack/react-router'
 import { useAuthStore } from '@/lib/authStore'
 import { ApiError } from '@/lib/api'
 
@@ -9,7 +8,6 @@ type Mode = 'login' | 'register'
 export function AuthPage() {
   const login = useAuthStore((s) => s.login)
   const register = useAuthStore((s) => s.register)
-  const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('login')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -25,7 +23,7 @@ export function AuthPage() {
     setConfirmPassword('')
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault()
     setError('')
 
@@ -41,7 +39,6 @@ export function AuthPage() {
       } else {
         await login(username, password)
       }
-      navigate({ to: '/' })
     } catch (err) {
       setError(
         err instanceof ApiError
