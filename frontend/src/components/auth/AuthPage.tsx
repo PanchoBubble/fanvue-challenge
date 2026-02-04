@@ -1,13 +1,14 @@
 import { type FormEvent, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
-import { useAuth } from '@/lib/auth'
+import { useAuthStore } from '@/lib/authStore'
 import { ApiError } from '@/lib/api'
 
 type Mode = 'login' | 'register'
 
 export function AuthPage() {
-  const { login, register } = useAuth()
+  const login = useAuthStore((s) => s.login)
+  const register = useAuthStore((s) => s.register)
   const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('login')
   const [username, setUsername] = useState('')
@@ -55,29 +56,37 @@ export function AuthPage() {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center bg-surface-page">
+    <div className="bg-surface-page flex h-screen items-center justify-center">
       <div className="flex w-[420px] flex-col items-center gap-8">
         <img src="/logo.svg" alt="Fanvue" className="h-5" />
 
-        <div className="w-full rounded-2xl border border-border-card bg-surface-card p-8">
+        <div className="border-border-card bg-surface-card w-full rounded-2xl border p-8">
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="flex flex-col gap-2">
-              <label htmlFor="auth-username" className="text-[13px] font-medium text-white">
+              <label
+                htmlFor="auth-username"
+                className="text-[13px] font-medium text-white"
+              >
                 Username
               </label>
               <input
                 id="auth-username"
                 type="text"
-                placeholder={isRegister ? 'Choose a username' : 'Enter your username'}
+                placeholder={
+                  isRegister ? 'Choose a username' : 'Enter your username'
+                }
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                className="h-11 rounded-lg border border-border-input bg-surface-input px-3.5 text-sm text-white placeholder:text-placeholder outline-none focus:border-brand transition-colors"
+                className="border-border-input bg-surface-input placeholder:text-placeholder focus:border-brand h-11 rounded-lg border px-3.5 text-sm text-white transition-colors outline-none"
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <label htmlFor="auth-password" className="text-[13px] font-medium text-white">
+              <label
+                htmlFor="auth-password"
+                className="text-[13px] font-medium text-white"
+              >
                 Password
               </label>
               <input
@@ -87,7 +96,7 @@ export function AuthPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-11 rounded-lg border border-border-input bg-surface-input px-3.5 text-sm text-white placeholder:text-placeholder outline-none focus:border-brand transition-colors"
+                className="border-border-input bg-surface-input placeholder:text-placeholder focus:border-brand h-11 rounded-lg border px-3.5 text-sm text-white transition-colors outline-none"
               />
             </div>
 
@@ -102,7 +111,10 @@ export function AuthPage() {
                   className="overflow-hidden"
                 >
                   <div className="flex flex-col gap-2 pt-0">
-                    <label htmlFor="auth-confirm-password" className="text-[13px] font-medium text-white">
+                    <label
+                      htmlFor="auth-confirm-password"
+                      className="text-[13px] font-medium text-white"
+                    >
                       Confirm Password
                     </label>
                     <input
@@ -112,29 +124,33 @@ export function AuthPage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
-                      className="h-11 rounded-lg border border-border-input bg-surface-input px-3.5 text-sm text-white placeholder:text-placeholder outline-none focus:border-brand transition-colors"
+                      className="border-border-input bg-surface-input placeholder:text-placeholder focus:border-brand h-11 rounded-lg border px-3.5 text-sm text-white transition-colors outline-none"
                     />
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {error && <p className="text-[13px] text-error">{error}</p>}
+            {error && <p className="text-error text-[13px]">{error}</p>}
 
             <button
               type="submit"
               disabled={loading}
-              className="flex h-[46px] items-center justify-center rounded-lg bg-brand text-[15px] font-semibold text-surface-page transition-opacity disabled:opacity-60"
+              className="bg-brand text-surface-page flex h-[46px] items-center justify-center rounded-lg text-[15px] font-semibold transition-opacity disabled:opacity-60"
             >
               {loading
-                ? isRegister ? 'Creating account…' : 'Signing in…'
-                : isRegister ? 'Create Account' : 'Sign In'}
+                ? isRegister
+                  ? 'Creating account…'
+                  : 'Signing in…'
+                : isRegister
+                  ? 'Create Account'
+                  : 'Sign In'}
             </button>
 
             <button
               type="button"
               onClick={switchMode}
-              className="text-[13px] text-dim hover:text-white transition-colors"
+              className="text-dim text-[13px] transition-colors hover:text-white"
             >
               {isRegister
                 ? 'Already have an account? Sign in'

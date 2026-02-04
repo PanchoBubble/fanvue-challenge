@@ -2,21 +2,21 @@
 
 ## Overview
 
-The project uses **GitHub Actions** to automatically deploy to a **Hetzner** server on every push to `main`. The workflow SSHs into the server and runs a production Docker Compose build in-place.
+- **Backend** — Deployed to a **Hetzner** server via **GitHub Actions** on every push to `main`. The workflow SSHs in, writes `.env` from GitHub Secrets, and runs Docker Compose.
+- **Frontend** — Deployed to **Cloudflare Pages**, connected to the same GitHub repo. Builds and serves the Vite SPA automatically on push to `main`.
 
 ## Architecture
 
 ```
 Push to main
     │
-    ▼
-GitHub Actions (ubuntu-latest)
+    ├──► GitHub Actions ──► SSH ──► Hetzner Server (API + DB + Redis)
     │
-    ▼  SSH (appleboy/ssh-action)
-Hetzner Server
-    ├── git pull origin main
-    ├── docker compose -f docker-compose.prod.yml up -d --build
-    └── docker image prune -f
+    └──► Cloudflare Pages ──► Build & Deploy (Vite SPA)
+
+Browser ──► Cloudflare Pages (frontend)
+               │
+               └──► Hetzner (API)  via VITE_API_URL
 ```
 
 ## File Structure
@@ -24,9 +24,9 @@ Hetzner Server
 ```
 .github/
 └── workflows/
-    └── deploy.yml              # GitHub Actions workflow
+    └── deploy.yml              # GitHub Actions workflow (backend deploy)
 docker-compose.yml              # Development (local)
-docker-compose.prod.yml         # Production (server)
+docker-compose.prod.yml         # Production (Hetzner — API only, no frontend)
 backend/
 └── Dockerfile                  # Multi-stage Node 20 Alpine build
 ```
@@ -41,9 +41,9 @@ Production variant of the dev compose file. Key differences from `docker-compose
 
 | Aspect | Dev | Prod |
 |---|---|---|
-| Credentials | Hardcoded | Read from `.env` on server |
+| Credentials | Hardcoded | Written from GitHub Secrets on deploy |
 | Source volumes | Mounted (`./backend/src:/app/src`) | None (baked into image) |
-| Seed data | Runs on every start | Skipped |
+| Seed data | Runs on every start | Via `POST /api/admin/seed?secret=<ADMIN_SECRET>` |
 | Restart policy | None | `unless-stopped` |
 | Exposed ports | Postgres (5432), Redis (6379) | Only API (3001) |
 | NODE_ENV | `development` | `production` |
@@ -67,24 +67,7 @@ git clone https://github.com/<your-org>/fanvue-challenge.git
 cd fanvue-challenge
 ```
 
-### 3. Create Production `.env`
-
-Create `/opt/fanvue-challenge/.env` with:
-
-```env
-DB_USER=fanvue
-DB_PASSWORD=<generate-a-strong-password>
-DB_NAME=fanvue_inbox
-JWT_SECRET=<generate-a-random-secret>
-```
-
-Generate secrets with:
-
-```bash
-openssl rand -hex 32
-```
-
-### 4. Initial Deploy
+### 3. Initial Deploy
 
 ```bash
 cd /opt/fanvue-challenge
@@ -94,10 +77,10 @@ docker compose -f docker-compose.prod.yml up -d --build
 To seed initial data on first deploy:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec api sh -c "npm run seed"
+curl -X POST "http://localhost:3001/api/admin/seed?secret=fanvue-admin"
 ```
 
-### 5. Verify
+### 4. Verify
 
 ```bash
 # Check containers are running
@@ -117,6 +100,12 @@ Configure these in **Settings > Secrets and variables > Actions**:
 | `SERVER_USER` | SSH user | `root` or `deploy` |
 | `SSH_PRIVATE_KEY` | Full SSH private key content | `-----BEGIN OPENSSH...` |
 | `DEPLOY_PATH` | Absolute path to repo on server | `/opt/fanvue-challenge` |
+| `DB_USER` | PostgreSQL username | `fanvue` |
+| `DB_PASSWORD` | PostgreSQL password | `openssl rand -hex 32` |
+| `DB_NAME` | PostgreSQL database name | `fanvue_inbox` |
+| `JWT_SECRET` | JWT signing secret | `openssl rand -hex 32` |
+| `ADMIN_SECRET` | Secret for admin endpoints | `openssl rand -hex 16` |
+| `FRONTEND_URL` | Cloudflare Pages URL (for CORS) | `https://fanvue-challenge.pages.dev` |
 
 ### Setting Up SSH Key Access
 
@@ -131,6 +120,27 @@ ssh-copy-id -i ~/.ssh/fanvue-deploy.pub <user>@<server-ip>
 
 # The private key (~/.ssh/fanvue-deploy) goes into the SSH_PRIVATE_KEY GitHub secret
 ```
+
+## Frontend — Cloudflare Pages
+
+### Setup
+
+1. Go to **Cloudflare Dashboard > Pages > Create a project**
+2. Connect your GitHub repo
+3. Configure build settings:
+   - **Framework preset**: None (or Vite)
+   - **Build command**: `npm run build`
+   - **Build output directory**: `dist`
+   - **Root directory**: `frontend`
+4. Add environment variable:
+   - `VITE_API_URL` = `https://<your-hetzner-ip-or-domain>:3001`
+5. Deploy
+
+Cloudflare Pages auto-deploys on every push to `main`. The `VITE_API_URL` env var is baked into the build so the SPA knows where the API lives.
+
+### Custom Domain (Optional)
+
+In Cloudflare Pages project settings > Custom domains, add your domain. Then set the `FRONTEND_URL` GitHub Secret to match (e.g. `https://app.yourdomain.com`) so backend CORS allows it.
 
 ## Operations
 
@@ -179,7 +189,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 - Ensure the public key is in `~/.ssh/authorized_keys` on the server
 
 **Containers crash on startup:**
-- Check `.env` file exists at `DEPLOY_PATH` on the server
+- Verify GitHub Secrets are configured (deploy writes `.env` automatically)
 - Run `docker compose -f docker-compose.prod.yml logs api` for error details
 - Verify Postgres is healthy before API starts (healthcheck handles this)
 

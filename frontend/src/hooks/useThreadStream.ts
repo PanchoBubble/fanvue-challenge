@@ -1,18 +1,18 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/queryKeys'
+import { useAuthStore } from '@/lib/authStore'
+import { API_BASE } from '@/lib/api'
 import type { Message, PaginatedMessages } from '@/types/api'
 
 export function useThreadStream(threadId?: string) {
   const qc = useQueryClient()
+  const token = useAuthStore((s) => s.token)
 
   useEffect(() => {
-    if (!threadId) return
+    if (!threadId || !token) return
 
-    const token = localStorage.getItem('fanvue_token')
-    if (!token) return
-
-    const url = `/api/threads/${threadId}/messages/stream?token=${encodeURIComponent(token)}`
+    const url = `${API_BASE}/api/threads/${threadId}/messages/stream?token=${encodeURIComponent(token)}`
     const es = new EventSource(url)
 
     es.addEventListener('message', (e) => {
@@ -35,9 +35,8 @@ export function useThreadStream(threadId?: string) {
           }
         },
       )
-
     })
 
     return () => es.close()
-  }, [threadId, qc])
+  }, [threadId, qc, token])
 }

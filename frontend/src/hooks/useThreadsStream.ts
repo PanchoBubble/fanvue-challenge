@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/queryKeys'
+import { useAuthStore } from '@/lib/authStore'
+import { API_BASE } from '@/lib/api'
 import type { Thread } from '@/types/api'
 
 /**
@@ -9,12 +11,12 @@ import type { Thread } from '@/types/api'
  */
 export function useThreadsStream() {
   const qc = useQueryClient()
+  const token = useAuthStore((s) => s.token)
 
   useEffect(() => {
-    const token = localStorage.getItem('fanvue_token')
     if (!token) return
 
-    const url = `/api/threads/stream?token=${encodeURIComponent(token)}`
+    const url = `${API_BASE}/api/threads/stream?token=${encodeURIComponent(token)}`
     const es = new EventSource(url)
 
     es.addEventListener('thread_created', (e) => {
@@ -41,7 +43,11 @@ export function useThreadsStream() {
           if (!old) return old
           return old
             .map((t) => (t.id === thread.id ? thread : t))
-            .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime())
+            .sort(
+              (a, b) =>
+                new Date(b.lastMessageAt).getTime() -
+                new Date(a.lastMessageAt).getTime(),
+            )
         },
       )
     })
@@ -62,5 +68,5 @@ export function useThreadsStream() {
     })
 
     return () => es.close()
-  }, [qc])
+  }, [qc, token])
 }

@@ -59,7 +59,7 @@ function randomItem<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
-async function seed() {
+export async function seed(): Promise<string> {
   if (!AppDataSource.isInitialized) {
     await AppDataSource.initialize()
   }
@@ -72,8 +72,7 @@ async function seed() {
   const existingCount = await threadRepo.count()
   if (existingCount > 0) {
     logger.info('Seed data already exists, skipping.')
-    await AppDataSource.destroy()
-    return
+    return 'Seed data already exists, skipping.'
   }
 
   logger.info('Seeding database...')
@@ -139,14 +138,20 @@ async function seed() {
     (sum, d) => sum + d.messageCount,
     0,
   )
-  logger.info(
-    `Seeding complete: ${THREAD_DEFINITIONS.length} threads, ${totalMessages} messages in ${elapsed}s`,
-  )
-
-  await AppDataSource.destroy()
+  const msg = `Seeding complete: ${THREAD_DEFINITIONS.length} threads, ${totalMessages} messages in ${elapsed}s`
+  logger.info(msg)
+  return msg
 }
 
-seed().catch((err) => {
-  logger.error('Seed failed', err)
-  process.exit(1)
-})
+// Run as standalone script (npm run seed)
+if (require.main === module) {
+  seed()
+    .then(async () => {
+      await AppDataSource.destroy()
+    })
+    .catch(async (err) => {
+      logger.error('Seed failed', err)
+      await AppDataSource.destroy()
+      process.exit(1)
+    })
+}

@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useSearch, useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '@/lib/auth'
+import { useAuthStore } from '@/lib/authStore'
 import { useThreadsStream } from '@/hooks/useThreadsStream'
 import type { Thread } from '@/types/api'
 import { ThreadList } from './ThreadList'
 import { MessagePanel } from './MessagePanel'
 
 export function ChatLayout() {
-  const { user, logout } = useAuth()
+  const user = useAuthStore((s) => s.user)
+  const logout = useAuthStore((s) => s.logout)
   const { threadId: selectedThreadId } = useSearch({
     from: '/_authenticated/threads',
   })
@@ -50,7 +51,10 @@ export function ChatLayout() {
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium">{user?.username}</span>
           <button
-            onClick={logout}
+            onClick={() => {
+              logout()
+              navigate({ to: '/auth' })
+            }}
             className="text-dim flex h-[34px] cursor-pointer items-center rounded-md border border-white/[0.13] px-3.5 text-sm transition-colors hover:bg-white/5"
           >
             Log out

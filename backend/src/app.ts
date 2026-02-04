@@ -5,6 +5,7 @@ import authRoutes from './routes/auth'
 import threadRoutes from './routes/threads'
 import messageRoutes, { sseService } from './routes/messages'
 import { requireAuth, requireAuthFlexible } from './middleware/auth'
+import { seed } from './seed/seedData'
 
 const app = express()
 
@@ -28,6 +29,21 @@ app.use('/api/threads', requireAuth, threadRoutes)
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+// Admin: seed database
+app.post('/api/admin/seed', async (req, res, next) => {
+  try {
+    const adminSecret = process.env.ADMIN_SECRET || 'fanvue-admin'
+    if (req.query.secret !== adminSecret) {
+      res.status(403).json({ error: 'Invalid secret' })
+      return
+    }
+    const result = await seed()
+    res.json({ status: 'ok', message: result })
+  } catch (err) {
+    next(err)
+  }
 })
 
 // Error handler (must be last)

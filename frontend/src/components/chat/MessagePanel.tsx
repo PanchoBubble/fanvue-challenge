@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { ChevronLeft } from 'lucide-react'
-import { useAuth } from '@/lib/auth'
+import { useAuthStore } from '@/lib/authStore'
 import { useMessages } from '@/hooks/useMessages'
 import {
   useThreads,
@@ -20,7 +20,7 @@ interface MessagePanelProps {
 }
 
 export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
-  const { user } = useAuth()
+  const user = useAuthStore((s) => s.user)
   const {
     data: messages = [],
     isLoading,

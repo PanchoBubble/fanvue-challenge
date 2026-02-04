@@ -1,4 +1,4 @@
-const AUTH_KEY = 'fanvue_token'
+export const API_BASE = import.meta.env.VITE_API_URL || ''
 
 export class ApiError extends Error {
   status: number
@@ -14,9 +14,11 @@ export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token = localStorage.getItem(AUTH_KEY)
+  // Lazy import to avoid circular dep (authStore imports apiFetch)
+  const { useAuthStore } = await import('./authStore')
+  const { token } = useAuthStore.getState()
 
-  const res = await fetch(path, {
+  const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -26,8 +28,7 @@ export async function apiFetch<T>(
   })
 
   if (res.status === 401) {
-    localStorage.removeItem(AUTH_KEY)
-    localStorage.removeItem('fanvue_user')
+    useAuthStore.getState().logout()
     window.location.href = '/auth'
     throw new ApiError(401, 'Unauthorized')
   }
