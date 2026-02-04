@@ -240,10 +240,12 @@ I used Pencil.dev to mock the UI, pulling visual styles from the Fanvue site. Th
 
 ### Deployment
 
-The application runs on a Hetzner server with Docker Compose:
+The backend runs on a Hetzner server with Docker Compose:
 
 - PostgreSQL 16
 - Redis 7
-- Node 20
+- Node 20 (API)
+
+The frontend is deployed to Cloudflare as static files.
 
 GitHub Actions deploys automatically on push to main. The Docker entrypoint runs migrations and seeds before starting the server, making deployment zero-touch.

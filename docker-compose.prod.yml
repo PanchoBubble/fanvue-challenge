@@ -15,16 +15,6 @@ services:
       - api
     restart: unless-stopped
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    expose:
-      - "80"
-    depends_on:
-      - api
-    restart: unless-stopped
-
   api:
     build:
       context: ./backend
