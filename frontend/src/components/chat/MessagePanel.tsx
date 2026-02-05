@@ -55,6 +55,8 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
 
   // Scroll-to-bottom state
   const [showScrollButton, setShowScrollButton] = useState(false)
+  const [newMessageCount, setNewMessageCount] = useState(0)
+  const isNearBottom = useRef(true)
 
   useEffect(() => {
     if (isEditingTitle) {
@@ -68,6 +70,8 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
     setIsEditingTitle(false)
     setShowDeleteConfirm(false)
     setShowScrollButton(false)
+    setNewMessageCount(0)
+    isNearBottom.current = true
   }, [threadId])
 
   const handleEditSave = () => {
@@ -125,13 +129,21 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
       } else if (pendingSend.current) {
         // User just sent a message → instant scroll to bottom
         pendingSend.current = false
+        setNewMessageCount(0)
         virtualizer.scrollToIndex(messages.length - 1, { align: 'end' })
       } else {
-        // New message from others → smooth scroll to bottom
-        virtualizer.scrollToIndex(messages.length - 1, {
-          align: 'end',
-          behavior: 'smooth',
-        })
+        // New message from others
+        const newMessagesAdded = messages.length - prevCount.current
+        if (isNearBottom.current) {
+          // User is near bottom → smooth scroll to bottom
+          virtualizer.scrollToIndex(messages.length - 1, {
+            align: 'end',
+            behavior: 'smooth',
+          })
+        } else {
+          // User is scrolled up → don't scroll, increment counter
+          setNewMessageCount((prev) => prev + newMessagesAdded)
+        }
       }
     }
 
@@ -153,7 +165,14 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
       // Show scroll-to-bottom button when not near bottom
       const distanceFromBottom =
         el.scrollHeight - el.scrollTop - el.clientHeight
-      setShowScrollButton(distanceFromBottom > 200)
+      const nearBottom = distanceFromBottom <= 200
+      isNearBottom.current = nearBottom
+      setShowScrollButton(!nearBottom)
+
+      // Reset new message counter when user scrolls near bottom
+      if (nearBottom) {
+        setNewMessageCount(0)
+      }
     }
 
     el.addEventListener('scroll', onScroll, { passive: true })
@@ -163,6 +182,7 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
   const scrollToBottom = () => {
     if (messages.length > 0) {
       virtualizer.scrollToIndex(messages.length - 1, { align: 'end' })
+      setNewMessageCount(0)
     }
   }
 
@@ -314,6 +334,11 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
             aria-label="Scroll to bottom"
           >
             <ChevronDown className="h-5 w-5 text-white" />
+            {newMessageCount > 0 && (
+              <span className="bg-brand text-surface-page absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-medium">
+                {newMessageCount}
+              </span>
+            )}
           </button>
         )}
       </div>
