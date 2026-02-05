@@ -1,5 +1,6 @@
 {
   "frontend/src/**/*.{ts,tsx}": [
+    "sh -c 'cd frontend && npx tsc -b --noEmit'",
     "sh -c 'cd frontend && node_modules/.bin/eslint --fix --config eslint.config.js \"$@\"' --",
     "sh -c 'cd frontend && node_modules/.bin/prettier --write \"$@\"' --"
   ],

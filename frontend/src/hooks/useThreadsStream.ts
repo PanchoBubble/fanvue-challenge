@@ -18,7 +18,7 @@ function showNotification(thread: Thread & { lastMessageUser?: string }) {
     return
   }
 
-  const title = thread.otherParticipant?.username || 'New Message'
+  const title = thread.title || 'New Message'
   const body = thread.lastMessageText || 'You have a new message'
 
   new Notification(title, {
