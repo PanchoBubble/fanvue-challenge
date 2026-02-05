@@ -65,23 +65,30 @@ virtualizer.scrollToIndex(messages.length - 1, { align: 'end' })
 
 When the user scrolls up and a new page loads, messages are prepended to the array.
 
-I track the previous first message ID in a ref. In `useLayoutEffect`, I:
-1. Find where the previous first message now sits using `findIndex`
-2. Multiply that index (= prepended count) by `estimateSize` (72px)
-3. Add it to `el.scrollTop`
+I use a **bottom distance preservation** approach:
+
+1. During scroll events, continuously track distance from bottom: `bottomDistance = virtualizer.getTotalSize() - scrollTop`
+2. In `useLayoutEffect` after prepend, restore position: `newOffset = newTotalSize - bottomDistance`
 
 ```typescript
-const prependedCount = prevFirstId.current
-  ? messages.findIndex((m) => m.id === prevFirstId.current)
-  : 0
+// In scroll handler (captures state BEFORE messages change)
+bottomDistance.current = virtualizer.getTotalSize() - el.scrollTop
 
+// In useLayoutEffect (runs AFTER messages change)
 if (prependedCount > 0) {
-  const estimatedAddedHeight = prependedCount * 72
-  el.scrollTop += estimatedAddedHeight
+  const newOffset = virtualizer.getTotalSize() - bottomDistance.current
+  virtualizer.scrollToOffset(newOffset, { align: 'start' })
 }
 ```
 
-**Why not use `scrollHeight` difference?** With `@tanstack/react-virtual`, relying on `scrollHeight` is unreliable because the virtualizer calculates total size based on `estimateSize * count`, but with dynamic `measureElement`, actual measured heights differ from estimates. Using the prepended count times estimate size is more predictable because it matches the virtualizer's internal positioning logic.
+**Why this approach?** Earlier attempts using `scrollHeight` differences or `estimateSize * prependedCount` caused jumps because:
+- With `@tanstack/react-virtual`, `scrollHeight` is unreliable due to dynamic `measureElement`
+- The virtualizer's internal scroll state can conflict with direct `scrollTop` manipulation
+- `virtualizer.scrollOffset` at effect time has already been affected by DOM changes
+
+The bottom distance method works because it captures scroll state during scroll events (before React updates), then uses the virtualizer's own `scrollToOffset` API to restore relative position after the total size changes.
+
+References: [TanStack/virtual Discussion #195](https://github.com/TanStack/virtual/discussions/195), [Mattermost's dynamic-virtualized-list](https://github.com/mattermost/dynamic-virtualized-list)
 
 Using `useLayoutEffect` is critical here because it runs synchronously before paint, so there's no visible jump.
 

@@ -35,8 +35,8 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
   const prevThreadId = useRef(threadId)
   const prevFirstId = useRef<string>('')
   const prevCount = useRef(0)
-  const prevScrollHeight = useRef(0)
   const pendingSend = useRef(false)
+  const bottomDistance = useRef(0)
   useThreadStream(threadId)
 
   const handleMessageSent = () => {
@@ -97,7 +97,6 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
     prevThreadId.current = threadId
     prevFirstId.current = ''
     prevCount.current = 0
-    prevScrollHeight.current = 0
   }
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -126,10 +125,10 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
         : 0
 
       if (prependedCount > 0) {
-        // Older messages prepended → adjust scrollTop by estimated height of new items
-        // Using estimateSize (72) is more reliable than scrollHeight diff with virtualizers
-        const estimatedAddedHeight = prependedCount * 72
-        el.scrollTop += estimatedAddedHeight
+        // Older messages prepended → restore scroll by maintaining distance from bottom
+        // bottomDistance was captured during scroll events before messages changed
+        const newOffset = virtualizer.getTotalSize() - bottomDistance.current
+        virtualizer.scrollToOffset(newOffset, { align: 'start' })
       } else if (pendingSend.current) {
         // User just sent a message → instant scroll to bottom
         pendingSend.current = false
@@ -153,7 +152,6 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
 
     prevCount.current = messages.length
     prevFirstId.current = messages[0]?.id
-    prevScrollHeight.current = el.scrollHeight
   }, [messages, virtualizer])
 
   // Infinite scroll: fetch older when near top + track scroll position for button
@@ -165,6 +163,9 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
       if (el.scrollTop < 200 && hasPreviousPage && !isFetchingPreviousPage) {
         fetchPreviousPage()
       }
+
+      // Track distance from bottom for scroll anchoring when prepending
+      bottomDistance.current = virtualizer.getTotalSize() - el.scrollTop
 
       // Show scroll-to-bottom button when not near bottom
       const distanceFromBottom =
@@ -181,7 +182,7 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
 
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
-  }, [hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage])
+  }, [hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage, virtualizer])
 
   const scrollToBottom = () => {
     if (messages.length > 0) {
