@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useMemo, useCallback } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Plus, Check, X } from 'lucide-react'
 import {
@@ -7,7 +7,7 @@ import {
   useUpdateThread,
   useDeleteThread,
 } from '@/hooks/useThreads'
-import { useAuthStore } from '@/lib/authStore'
+import { useUnreadStore } from '@/lib/unreadStore'
 import { ThreadMenu } from './ThreadMenu'
 import { ConfirmModal } from './ConfirmModal'
 
@@ -73,7 +73,6 @@ export function ThreadList({
   onSelectThread,
 }: ThreadListProps) {
   const [search, setSearch] = useState('')
-  const currentUsername = useAuthStore((s) => s.user?.username)
   const { data: allThreads = [], isLoading } = useThreads()
   const threads = search
     ? allThreads.filter((t) =>
@@ -98,33 +97,17 @@ export function ThreadList({
     title: string
   } | null>(null)
 
-  // Track when user last read each thread (timestamp-based)
-  const [lastReadAt, setLastReadAt] = useState<Record<string, string>>({})
+  // Unread counts from global store
+  const unreadCounts = useUnreadStore((s) => s.counts)
+  const resetUnread = useUnreadStore((s) => s.reset)
 
-  // Derive unread status from threads vs lastReadAt (no setState in effect)
-  const unreadCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const t of threads) {
-      const readTime = lastReadAt[t.id]
-      const isFromOther = t.lastMessageUser !== currentUsername
-      // Has new message since last read and from another user
-      if (isFromOther && (!readTime || readTime < t.lastMessageAt)) {
-        counts[t.id] = 1
-      }
-    }
-    return counts
-  }, [threads, lastReadAt, currentUsername])
-
-  // Wrap onSelectThread to also update lastReadAt
+  // Wrap onSelectThread to also reset unread count
   const handleSelectThread = useCallback(
     (threadId: string) => {
       onSelectThread(threadId)
-      const thread = threads.find((t) => t.id === threadId)
-      if (thread) {
-        setLastReadAt((prev) => ({ ...prev, [threadId]: thread.lastMessageAt }))
-      }
+      resetUnread(threadId)
     },
-    [threads, onSelectThread],
+    [onSelectThread, resetUnread],
   )
 
   useEffect(() => {

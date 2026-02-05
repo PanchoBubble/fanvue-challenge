@@ -2,50 +2,26 @@ import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/queryKeys'
 import { useAuthStore } from '@/lib/authStore'
-import { useNotificationStore } from '@/lib/notificationStore'
+import { useUnreadStore } from '@/lib/unreadStore'
 import { API_BASE } from '@/lib/api'
 import type { Thread } from '@/types/api'
 
 /**
- * Show a browser notification for a new message.
- */
-function showNotification(thread: Thread & { lastMessageUser?: string }) {
-  if (
-    !('Notification' in window) ||
-    Notification.permission !== 'granted' ||
-    !document.hidden
-  ) {
-    return
-  }
-
-  const title = thread.title || 'New Message'
-  const body = thread.lastMessageText || 'You have a new message'
-
-  new Notification(title, {
-    body,
-    icon: '/favicon.ico',
-    tag: `thread-${thread.id}`, // Prevent duplicate notifications for same thread
-  })
-}
-
-/**
  * Global SSE stream for thread-level events (e.g. new thread created).
  * Updates the thread list cache in real-time.
+ * Increments unread counts for threads that receive messages while not selected.
  */
-export function useThreadsStream() {
+export function useThreadsStream(selectedThreadId?: string) {
   const qc = useQueryClient()
   const token = useAuthStore((s) => s.token)
   const username = useAuthStore((s) => s.user?.username)
-  const fetchPreference = useNotificationStore((s) => s.fetchPreference)
-  const hasFetchedPref = useRef(false)
+  const increment = useUnreadStore((s) => s.increment)
+  const selectedRef = useRef(selectedThreadId)
 
-  // Fetch notification preference on mount
+  // Keep ref up to date
   useEffect(() => {
-    if (token && !hasFetchedPref.current) {
-      hasFetchedPref.current = true
-      fetchPreference()
-    }
-  }, [token, fetchPreference])
+    selectedRef.current = selectedThreadId
+  }, [selectedThreadId])
 
   useEffect(() => {
     if (!token) return
@@ -71,20 +47,11 @@ export function useThreadsStream() {
       const thread: Thread & { lastMessageUser?: string } = JSON.parse(e.data)
       const isFromOther =
         thread.lastMessageUser && thread.lastMessageUser !== username
+      const isNotSelected = thread.id !== selectedRef.current
 
-      // Handle notifications for messages from others
-      if (isFromOther) {
-        const { preference, modalShownThisSession, openModal } =
-          useNotificationStore.getState()
-
-        if (preference === 'granted') {
-          showNotification(thread)
-        } else if (
-          (preference === null || preference === 'ask_later') &&
-          !modalShownThisSession
-        ) {
-          openModal()
-        }
+      // Increment unread count for messages from others in non-selected threads
+      if (isFromOther && isNotSelected) {
+        increment(thread.id)
       }
 
       // Update the thread and re-sort by lastMessageAt descending
@@ -119,5 +86,5 @@ export function useThreadsStream() {
     })
 
     return () => es.close()
-  }, [qc, token, username])
+  }, [qc, token, username, increment])
 }
