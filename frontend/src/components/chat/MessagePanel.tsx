@@ -160,7 +160,7 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
     if (!el) return
 
     const onScroll = () => {
-      if (el.scrollTop < 200 && hasPreviousPage && !isFetchingPreviousPage) {
+      if (el.scrollTop < 800 && hasPreviousPage && !isFetchingPreviousPage) {
         fetchPreviousPage()
       }
 
