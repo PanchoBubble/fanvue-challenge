@@ -6,6 +6,7 @@ import { useThreadsStream } from '@/hooks/useThreadsStream'
 import type { Thread } from '@/types/api'
 import { ThreadList } from './ThreadList'
 import { MessagePanel } from './MessagePanel'
+import { NotificationModal } from './NotificationModal'
 
 export function ChatLayout() {
   const user = useAuthStore((s) => s.user)
@@ -44,43 +45,46 @@ export function ChatLayout() {
   }, [qc, setSelectedThreadId])
 
   return (
-    <div className="bg-surface-page flex h-dvh flex-col">
-      {/* Header */}
-      <header className="border-border-subtle bg-surface-page flex h-14 shrink-0 items-center justify-between border-b px-5">
-        <img src="/logo.svg" alt="Fanvue" className="h-5" />
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium">{user?.username}</span>
-          <button
-            onClick={() => {
-              logout()
-              navigate({ to: '/auth' })
-            }}
-            className="text-dim flex h-[34px] cursor-pointer items-center rounded-md border border-white/[0.13] px-3.5 text-sm transition-colors hover:bg-white/5"
-          >
-            Log out
-          </button>
-        </div>
-      </header>
+    <>
+      <NotificationModal />
+      <div className="bg-surface-page flex h-dvh flex-col">
+        {/* Header */}
+        <header className="border-border-subtle bg-surface-page flex h-14 shrink-0 items-center justify-between border-b px-5">
+          <img src="/logo.svg" alt="Fanvue" className="h-5" />
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium">{user?.username}</span>
+            <button
+              onClick={() => {
+                logout()
+                navigate({ to: '/auth' })
+              }}
+              className="text-dim flex h-[34px] cursor-pointer items-center rounded-md border border-white/[0.13] px-3.5 text-sm transition-colors hover:bg-white/5"
+            >
+              Log out
+            </button>
+          </div>
+        </header>
 
-      {/* Body */}
-      <div className="flex min-h-0 flex-1">
-        <div
-          className={`${selectedThreadId ? 'hidden md:flex' : 'flex'} w-full shrink-0 md:w-80`}
-        >
-          <ThreadList
-            selectedThreadId={selectedThreadId}
-            onSelectThread={setSelectedThreadId}
-          />
-        </div>
-        <div
-          className={`${selectedThreadId ? 'flex' : 'hidden md:flex'} min-w-0 flex-1`}
-        >
-          <MessagePanel
-            threadId={selectedThreadId}
-            onBack={() => navigate({ to: '/threads' })}
-          />
+        {/* Body */}
+        <div className="flex min-h-0 flex-1">
+          <div
+            className={`${selectedThreadId ? 'hidden md:flex' : 'flex'} w-full shrink-0 md:w-80`}
+          >
+            <ThreadList
+              selectedThreadId={selectedThreadId}
+              onSelectThread={setSelectedThreadId}
+            />
+          </div>
+          <div
+            className={`${selectedThreadId ? 'flex' : 'hidden md:flex'} min-w-0 flex-1`}
+          >
+            <MessagePanel
+              threadId={selectedThreadId}
+              onBack={() => navigate({ to: '/threads' })}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

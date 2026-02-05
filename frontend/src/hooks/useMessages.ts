@@ -10,10 +10,11 @@ import type { Message, PaginatedMessages } from '@/types/api'
 export function useMessages(threadId?: string) {
   return useInfiniteQuery({
     queryKey: queryKeys.messages.byThread(threadId!),
-    queryFn: ({ pageParam }) => {
+    queryFn: ({ pageParam, signal }) => {
       const params = pageParam ? `?cursor=${pageParam}` : ''
       return apiFetch<PaginatedMessages>(
         `/api/threads/${threadId}/messages${params}`,
+        { signal },
       )
     },
     initialPageParam: undefined as string | undefined,

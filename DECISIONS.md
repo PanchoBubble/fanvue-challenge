@@ -88,11 +88,17 @@ The thread list also shows a flashing dot indicator on threads that received new
 
 #### Thread Switching
 
-When the user rapidly switches between threads, in-flight message fetches for the previous thread could return stale data. TanStack Query handles this automatically.
+When the user rapidly switches between threads, in-flight message fetches for the previous thread could return stale data. TanStack Query handles this with automatic request cancellation.
 
-When the query key changes from `['messages', threadA]` to `['messages', threadB]`, it marks the previous query as inactive. The response for thread A, if it arrives late, updates thread A's cache entry, not the currently displayed thread B.
+When the query key changes from `['messages', threadA]` to `['messages', threadB]`, TanStack Query provides an `AbortSignal` to the `queryFn`. We pass this signal to `fetch`, which cancels the in-flight request immediately. This prevents wasted network resources and ensures only the current thread's data is fetched.
 
-You could also implement this manually with fetch and Zustand, using AbortSignal to cancel on thread change, or checking if the current query parameters still match when the response arrives and discarding stale results. Zustand would let you access this data from anywhere in the app without triggering multiple requests. Both approaches work but that's basically reimplementing what TanStack Query does under the hood with a lot more code.
+```typescript
+queryFn: ({ pageParam, signal }) => {
+  return apiFetch(`/api/threads/${threadId}/messages`, { signal })
+}
+```
+
+Without the signal, TanStack Query would still handle staleness correctly by updating the previous thread's cache entry rather than the current one. But passing the signal is better because it actually cancels the HTTP request rather than letting it complete and discarding the result.
 
 #### SSE Lifecycle
 
@@ -190,6 +196,12 @@ I only used `useMemo` in a couple places throughout the repo. The core optimizat
 
 - The virtualizer only renders visible items, so even if the parent re-renders, only visible message components are in the DOM
 - TanStack Query handles caching and deduplication, so we're not re-fetching or re-rendering on every state change
+
+#### Derived State over Effect-Driven State
+
+For computed values like unread counts, I use `useMemo` to derive state rather than tracking it with `useState` + `useEffect`. This avoids calling `setState` synchronously inside effect bodies, which can cause extra render cycles.
+
+The pattern: instead of tracking "unread count" as state that gets incremented by effects, track "last read timestamp" and derive unread status by comparing against the thread's `lastMessageAt`. The `lastReadAt` state only updates on user interaction (selecting a thread), not in an effect.
 
 ---
 

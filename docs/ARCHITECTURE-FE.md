@@ -130,7 +130,7 @@ Redirects to `/threads`.
 
 ### Step 15 — Thread Messages Route (`src/routes/_authenticated/threads/$threadId.tsx`)
 
-- `useMessages(threadId)` — `useInfiniteQuery` with cursor pagination
+- `useMessages(threadId)` — `useInfiniteQuery` with cursor pagination, passes `AbortSignal` to cancel in-flight requests on thread switch
 - `useSendMessage(threadId)` — mutation, optimistic update
 - `useThreadSSE(threadId)` — `EventSource` to `/api/threads/:id/stream?token=<jwt>`, appends new messages to query cache
 - Renders: thread header, `MessageList`, `MessageInput`

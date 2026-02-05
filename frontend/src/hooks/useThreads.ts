@@ -6,8 +6,10 @@ import type { Thread } from '@/types/api'
 export function useThreads() {
   return useQuery({
     queryKey: queryKeys.threads.list(),
-    queryFn: () =>
-      apiFetch<{ threads: Thread[] }>('/api/threads').then((r) => r.threads),
+    queryFn: ({ signal }) =>
+      apiFetch<{ threads: Thread[] }>('/api/threads', { signal }).then(
+        (r) => r.threads,
+      ),
   })
 }
 

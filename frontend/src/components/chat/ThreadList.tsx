@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Plus, Check, X } from 'lucide-react'
 import {
@@ -98,56 +98,34 @@ export function ThreadList({
     title: string
   } | null>(null)
 
-  // Track flashing dots for threads that just received a new message
-  const [flashingIds, setFlashingIds] = useState<Set<string>>(new Set())
-  const [prevTimestamps, setPrevTimestamps] = useState<Record<string, string>>(
-    {},
-  )
+  // Track when user last read each thread (timestamp-based)
+  const [lastReadAt, setLastReadAt] = useState<Record<string, string>>({})
 
-  // Detect new messages (adjust-state-during-render pattern — no effect, no ref reads)
-  let timestampsChanged = false
-  for (const t of threads) {
-    if (prevTimestamps[t.id] !== t.lastMessageAt) {
-      timestampsChanged = true
-      break
-    }
-  }
-  if (
-    !timestampsChanged &&
-    Object.keys(prevTimestamps).length !== threads.length
-  ) {
-    timestampsChanged = true
-  }
-
-  if (timestampsChanged) {
-    const newlyFlashing: string[] = []
+  // Derive unread status from threads vs lastReadAt (no setState in effect)
+  const unreadCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
     for (const t of threads) {
-      const prev = prevTimestamps[t.id]
-      // Only flash if message is from someone else
+      const readTime = lastReadAt[t.id]
       const isFromOther = t.lastMessageUser !== currentUsername
-      if (
-        prev &&
-        prev !== t.lastMessageAt &&
-        !flashingIds.has(t.id) &&
-        isFromOther
-      ) {
-        newlyFlashing.push(t.id)
+      // Has new message since last read and from another user
+      if (isFromOther && (!readTime || readTime < t.lastMessageAt)) {
+        counts[t.id] = 1
       }
     }
-    const next: Record<string, string> = {}
-    for (const t of threads) next[t.id] = t.lastMessageAt
-    setPrevTimestamps(next)
-    if (newlyFlashing.length > 0) {
-      setFlashingIds(new Set([...flashingIds, ...newlyFlashing]))
-    }
-  }
+    return counts
+  }, [threads, lastReadAt, currentUsername])
 
-  // Auto-clear flashing dots after 2s
-  useEffect(() => {
-    if (flashingIds.size === 0) return
-    const timer = setTimeout(() => setFlashingIds(new Set()), 2000)
-    return () => clearTimeout(timer)
-  }, [flashingIds])
+  // Wrap onSelectThread to also update lastReadAt
+  const handleSelectThread = useCallback(
+    (threadId: string) => {
+      onSelectThread(threadId)
+      const thread = threads.find((t) => t.id === threadId)
+      if (thread) {
+        setLastReadAt((prev) => ({ ...prev, [threadId]: thread.lastMessageAt }))
+      }
+    },
+    [threads, onSelectThread],
+  )
 
   useEffect(() => {
     if (editingId) {
@@ -240,7 +218,7 @@ export function ThreadList({
           {threads.map((thread) => {
             const isActive = thread.id === selectedThreadId
             const isEditing = editingId === thread.id
-            const isFlashing = flashingIds.has(thread.id)
+            const unreadCount = unreadCounts[thread.id] || 0
             return (
               <motion.button
                 key={thread.id}
@@ -249,21 +227,16 @@ export function ThreadList({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -12 }}
                 transition={{ duration: 0.15 }}
-                onClick={() => !isEditing && onSelectThread(thread.id)}
+                onClick={() => !isEditing && handleSelectThread(thread.id)}
                 className={`group outline-surface-active relative flex h-16 cursor-pointer items-center gap-3 rounded-lg p-3 text-left transition-colors ${
                   isActive
                     ? 'bg-surface-active outline-surface-active outline outline-1'
                     : 'hover:bg-white/5'
                 }`}
               >
-                {isFlashing && (
-                  <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
-                    <span className="animate-ping-brand bg-brand absolute inline-flex h-full w-full rounded-full opacity-75" />
-                    <span className="bg-brand relative inline-flex h-2.5 w-2.5 rounded-full" />
-                  </span>
-                )}
                 <ThreadAvatar title={thread.title} id={thread.id} />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  {/* Row 1: Title + Time (top-right) + Menu */}
                   <div className="flex items-center justify-between gap-2">
                     {isEditing ? (
                       <input
@@ -283,20 +256,15 @@ export function ThreadList({
                     ) : (
                       <span
                         className={`truncate text-sm ${isActive ? 'font-medium' : ''}`}
+                        title={thread.title}
                       >
                         {thread.title}
                       </span>
                     )}
                     <div className="flex shrink-0 items-center gap-1">
-                      {thread.unreadCount > 0 && !isEditing && (
-                        <span
-                          className={`flex h-5 items-center rounded-[10px] px-1.5 text-[11px] ${
-                            isActive ? 'bg-badge' : 'bg-badge-dim'
-                          }`}
-                        >
-                          {thread.unreadCount}
-                        </span>
-                      )}
+                      <span className="text-dim text-[11px]">
+                        {formatTimeAgo(thread.lastMessageAt)}
+                      </span>
                       {!isEditing && (
                         <ThreadMenu
                           onEdit={() => {
@@ -313,13 +281,20 @@ export function ThreadList({
                       )}
                     </div>
                   </div>
+                  {/* Row 2: Last message + Unread badge (bottom-right) */}
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-dim truncate text-[12px]">
                       {thread.lastMessageText ?? ''}
                     </span>
-                    <span className="text-dim shrink-0 text-[11px]">
-                      {formatTimeAgo(thread.lastMessageAt)}
-                    </span>
+                    {unreadCount > 0 && !isEditing && (
+                      <span
+                        className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-medium ${
+                          isActive ? 'bg-badge' : 'bg-brand text-surface-page'
+                        }`}
+                      >
+                        {unreadCount}
+                      </span>
+                    )}
                   </div>
                 </div>
               </motion.button>
