@@ -44,7 +44,7 @@ Messages are fetched in pages of 50 (configurable up to 100).
 - Backed by a database index on `(threadId, createdAt)`
 - Avoids the performance cliff of `OFFSET` based pagination on large datasets
 - TanStack Query's `useInfiniteQuery` manages the page cache
-- Fetches older pages via `getPreviousPageParam` when `scrollTop < 200px`
+- Fetches older pages via `getPreviousPageParam` when `scrollTop < 800px` (higher threshold for smoother UX)
 
 > The combination means the browser never holds more than a few hundred DOM nodes regardless of thread size, and the database query remains O(log n) per page fetch.
 
