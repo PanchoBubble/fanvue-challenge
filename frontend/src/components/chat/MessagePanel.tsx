@@ -120,12 +120,16 @@ export function MessagePanel({ threadId, onBack }: MessagePanelProps) {
       // Initial load → instant scroll to bottom
       virtualizer.scrollToIndex(messages.length - 1, { align: 'end' })
     } else if (messages.length > prevCount.current) {
-      if (prevFirstId.current && messages[0]?.id !== prevFirstId.current) {
-        // Older messages prepended → adjust scrollTop by the height delta before paint
-        const heightDiff = el.scrollHeight - prevScrollHeight.current
-        if (heightDiff > 0) {
-          el.scrollTop += heightDiff
-        }
+      // Check if older messages were prepended by finding where the old first message is now
+      const prependedCount = prevFirstId.current
+        ? messages.findIndex((m) => m.id === prevFirstId.current)
+        : 0
+
+      if (prependedCount > 0) {
+        // Older messages prepended → adjust scrollTop by estimated height of new items
+        // Using estimateSize (72) is more reliable than scrollHeight diff with virtualizers
+        const estimatedAddedHeight = prependedCount * 72
+        el.scrollTop += estimatedAddedHeight
       } else if (pendingSend.current) {
         // User just sent a message → instant scroll to bottom
         pendingSend.current = false

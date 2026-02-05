@@ -65,12 +65,25 @@ virtualizer.scrollToIndex(messages.length - 1, { align: 'end' })
 
 When the user scrolls up and a new page loads, messages are prepended to the array.
 
-I track the previous `scrollHeight` and first message ID in refs. In `useLayoutEffect`, I:
-1. Detect that the first message changed
-2. Compute the height delta: `el.scrollHeight - prevScrollHeight`
+I track the previous first message ID in a ref. In `useLayoutEffect`, I:
+1. Find where the previous first message now sits using `findIndex`
+2. Multiply that index (= prepended count) by `estimateSize` (72px)
 3. Add it to `el.scrollTop`
 
-This keeps the viewport pinned to the same message the user was reading. Using `useLayoutEffect` is critical here because it runs synchronously before paint, so there's no visible jump.
+```typescript
+const prependedCount = prevFirstId.current
+  ? messages.findIndex((m) => m.id === prevFirstId.current)
+  : 0
+
+if (prependedCount > 0) {
+  const estimatedAddedHeight = prependedCount * 72
+  el.scrollTop += estimatedAddedHeight
+}
+```
+
+**Why not use `scrollHeight` difference?** With `@tanstack/react-virtual`, relying on `scrollHeight` is unreliable because the virtualizer calculates total size based on `estimateSize * count`, but with dynamic `measureElement`, actual measured heights differ from estimates. Using the prepended count times estimate size is more predictable because it matches the virtualizer's internal positioning logic.
+
+Using `useLayoutEffect` is critical here because it runs synchronously before paint, so there's no visible jump.
 
 #### Scenario 3: New Message Arrives via SSE
 
