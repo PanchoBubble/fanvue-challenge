@@ -59,7 +59,7 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
             #{message.messageNumber}
           </span>
         </div>
-        <p className="text-sm">{message.text}</p>
+        <p className="text-sm break-words">{message.text}</p>
         <span
           className={`text-[10px] ${isSelf ? 'text-white/40' : 'text-dim'}`}
         >
