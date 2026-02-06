@@ -73,6 +73,21 @@ export class AuthService {
     }
   }
 
+  /**
+   * Verifies token and checks that user still exists in DB.
+   * Use this in auth middleware to prevent deleted users from accessing resources.
+   */
+  async verifyTokenAndUser(token: string): Promise<JwtPayload> {
+    const payload = this.verifyToken(token)
+
+    const user = await this.repo.findOneBy({ id: payload.userId })
+    if (!user) {
+      throw new AppError(401, 'User no longer exists')
+    }
+
+    return payload
+  }
+
   private signToken(user: User): string {
     const payload: JwtPayload = {
       userId: user.id,
