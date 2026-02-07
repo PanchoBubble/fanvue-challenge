@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express'
 import { MessageService } from '../services/MessageService'
 import { ThreadService } from '../services/ThreadService'
 import { SSEService } from '../services/SSEService'
+import { ReactionService } from '../services/ReactionService'
 import {
   validateMessageBody,
   validatePaginationParams,
@@ -10,6 +11,7 @@ const router = Router({ mergeParams: true })
 const messageService = new MessageService()
 const threadService = new ThreadService()
 const sseService = new SSEService()
+const reactionService = new ReactionService()
 
 /**
  * GET /api/threads/:id/messages?cursor=<string>&limit=<number>
@@ -30,7 +32,16 @@ router.get(
       await threadService.getById(id)
 
       const result = await messageService.getByThread(id, cursor, limit)
-      res.json(result)
+
+      // Attach reactions to each message
+      const messageIds = result.items.map((m) => m.id)
+      const reactionsMap = await reactionService.getForMessages(messageIds)
+      const items = result.items.map((m) => ({
+        ...m,
+        reactions: reactionsMap[m.id] || {},
+      }))
+
+      res.json({ ...result, items })
     } catch (err) {
       next(err)
     }

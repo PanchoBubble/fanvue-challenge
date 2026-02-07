@@ -154,6 +154,20 @@ export class SSEService {
   }
 
   /**
+   * Broadcast a reaction update to all SSE clients watching a thread.
+   */
+  async broadcastReaction(
+    threadId: string,
+    data: {
+      messageId: string
+      reactions: Record<string, { count: number; userIds: string[] }>
+    },
+  ): Promise<void> {
+    const payload = JSON.stringify({ event: 'reaction_update', data })
+    await this.publisher.publish(`${CHANNEL_PREFIX}${threadId}`, payload)
+  }
+
+  /**
    * Send data directly to all connected clients for a thread.
    * Called by the Redis subscriber when a message is received.
    */
@@ -161,7 +175,19 @@ export class SSEService {
     const clients = this.connections.get(threadId)
     if (!clients || clients.size === 0) return
 
-    const payload = `event: message\ndata: ${data}\n\n`
+    // Support wrapped events (e.g. reaction_update) alongside plain messages
+    let payload: string
+    try {
+      const parsed = JSON.parse(data)
+      if (parsed.event && parsed.data) {
+        payload = `event: ${parsed.event}\ndata: ${JSON.stringify(parsed.data)}\n\n`
+      } else {
+        payload = `event: message\ndata: ${data}\n\n`
+      }
+    } catch {
+      payload = `event: message\ndata: ${data}\n\n`
+    }
+
     clients.forEach((res) => {
       try {
         res.write(payload)

@@ -31,5 +31,5 @@ jobs:
             printf 'DB_USER=%s\nDB_PASSWORD=%s\nDB_NAME=%s\nJWT_SECRET=%s\nADMIN_SECRET=%s\nFRONTEND_URL=%s\n' \
               "$DB_USER" "$DB_PASSWORD" "$DB_NAME" "$JWT_SECRET" "$ADMIN_SECRET" "$FRONTEND_URL" > .env
 
-            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
-            docker image prune -f
+            podman-compose -f docker-compose.prod.yml up -d --build
+            podman image prune -f

@@ -15,6 +15,11 @@ export interface Thread {
   updatedAt: string
 }
 
+export interface ReactionSummary {
+  count: number
+  userIds: string[]
+}
+
 export interface Message {
   id: string
   threadId: string
@@ -22,6 +27,7 @@ export interface Message {
   author: string
   messageNumber: number
   createdAt: string
+  reactions: Record<string, ReactionSummary>
 }
 
 export interface AuthResponse {

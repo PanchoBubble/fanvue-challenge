@@ -4,6 +4,7 @@ import { errorHandler } from './middleware/errorHandler'
 import authRoutes from './routes/auth'
 import threadRoutes from './routes/threads'
 import messageRoutes, { sseService } from './routes/messages'
+import reactionRoutes from './routes/reactions'
 import { requireAuth, requireAuthFlexible } from './middleware/auth'
 import { seed } from './seed/seedData'
 
@@ -15,6 +16,7 @@ app.use(express.json({ limit: '16kb' }))
 
 // Routes
 app.use('/api/auth', authRoutes)
+app.use('/api/messages/:messageId/reactions', requireAuth, reactionRoutes)
 app.use('/api/threads/:id/messages', requireAuthFlexible, messageRoutes)
 // SSE stream for thread-level events (must be before requireAuth mount)
 app.get('/api/threads/stream', requireAuthFlexible, (_req, res, next) => {

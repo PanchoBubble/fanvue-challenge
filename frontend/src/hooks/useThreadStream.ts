@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/queryKeys'
 import { useAuthStore } from '@/lib/authStore'
 import { API_BASE } from '@/lib/api'
-import type { Message, PaginatedMessages } from '@/types/api'
+import type { Message, PaginatedMessages, ReactionSummary } from '@/types/api'
 
 export function useThreadStream(threadId?: string) {
   const qc = useQueryClient()
@@ -30,8 +30,38 @@ export function useThreadStream(threadId?: string) {
             ...old,
             pages: [
               ...old.pages.slice(0, -1),
-              { ...lastPage, items: [...lastPage.items, msg] },
+              {
+                ...lastPage,
+                items: [
+                  ...lastPage.items,
+                  { ...msg, reactions: msg.reactions || {} },
+                ],
+              },
             ],
+          }
+        },
+      )
+    })
+
+    es.addEventListener('reaction_update', (e) => {
+      const { messageId, reactions } = JSON.parse(e.data) as {
+        messageId: string
+        reactions: Record<string, ReactionSummary>
+      }
+      const key = queryKeys.messages.byThread(threadId)
+
+      qc.setQueryData<{ pages: PaginatedMessages[]; pageParams: unknown[] }>(
+        key,
+        (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((msg) =>
+                msg.id === messageId ? { ...msg, reactions } : msg,
+              ),
+            })),
           }
         },
       )
