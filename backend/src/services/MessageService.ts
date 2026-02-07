@@ -1,5 +1,6 @@
 import { Repository } from 'typeorm'
 import { Message } from '../entities/Message'
+import { Thread } from '../entities/Thread'
 import { AppDataSource } from '../config/database'
 import { encodeCursor, decodeCursor } from '../utils/cursor'
 import { AppError } from '../middleware/errorHandler'
@@ -52,19 +53,44 @@ export class MessageService {
     }
   }
 
-  async create(
+  /**
+   * Creates a message and updates the thread in a single transaction (2 roundtrips).
+   * The UPDATE takes a row-level exclusive lock, serializing concurrent writes
+   * and preventing race conditions on messageNumber and lastMessageText.
+   */
+  async createInThread(
     threadId: string,
     text: string,
     author: string,
-    messageNumber: number,
-  ): Promise<Message> {
-    const message = this.repo.create({
-      threadId,
-      text: text.trim(),
-      author,
-      messageNumber,
-    })
+  ): Promise<{ message: Message; thread: Thread }> {
+    return AppDataSource.manager.transaction(async (manager) => {
+      // 1) Atomically increment messageCount, update metadata, and return the row.
+      //    UPDATE takes a row lock — concurrent writes to the same thread serialize here.
+      const [updatedThread] = await manager.query(
+        `UPDATE threads
+            SET "messageCount" = "messageCount" + 1,
+                "lastMessageAt" = NOW(),
+                "lastMessageText" = $2,
+                "updatedAt" = NOW()
+          WHERE id = $1
+          RETURNING *`,
+        [threadId, text.trim()],
+      )
 
-    return this.repo.save(message)
+      if (!updatedThread) {
+        throw new AppError(404, 'Thread not found')
+      }
+
+      // 2) Insert the message using the already-incremented count
+      const message = manager.create(Message, {
+        threadId,
+        text: text.trim(),
+        author,
+        messageNumber: updatedThread.messageCount,
+      })
+      const savedMessage = await manager.save(message)
+
+      return { message: savedMessage, thread: updatedThread as Thread }
+    })
   }
 }

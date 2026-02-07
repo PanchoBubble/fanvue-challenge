@@ -6,7 +6,6 @@ import {
   validateMessageBody,
   validatePaginationParams,
 } from '../middleware/validation'
-
 const router = Router({ mergeParams: true })
 const messageService = new MessageService()
 const threadService = new ThreadService()
@@ -50,30 +49,20 @@ router.post(
     try {
       const { id } = req.params
       const { text } = req.body
-
-      // Get thread (also verifies it exists)
-      const thread = await threadService.getById(id)
-
-      // Author comes from JWT token
       const author = req.user!.username
-      const messageNumber = thread.messageCount + 1
-      const message = await messageService.create(
+
+      // Single transaction: locks thread row, creates message, updates thread
+      const { message, thread } = await messageService.createInThread(
         id,
         text,
         author,
-        messageNumber,
       )
 
-      // Update thread metadata
-      const updatedThread = await threadService.updateLastMessage(
-        id,
-        message.createdAt,
-        message.text,
-      )
-
-      // Broadcast message to thread subscribers + thread update to global subscribers
-      await sseService.broadcastMessage(id, message)
-      await sseService.broadcastThreadUpdated(updatedThread, message.author)
+      // Broadcast in parallel — these are independent Redis publishes
+      await Promise.all([
+        sseService.broadcastMessage(id, message),
+        sseService.broadcastThreadUpdated(thread, message.author),
+      ])
 
       res.status(201).json({ message })
     } catch (err) {
