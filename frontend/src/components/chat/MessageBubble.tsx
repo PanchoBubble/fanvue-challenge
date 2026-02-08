@@ -147,15 +147,10 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
             <span
               className={`text-[10px] ${isSelf ? 'text-white/40' : 'text-dim'}`}
             >
-              #{message.messageNumber}
+              {formatTime(message.createdAt)}
             </span>
           </div>
           <p className="text-sm break-words">{message.text}</p>
-          <span
-            className={`text-[10px] ${isSelf ? 'text-white/40' : 'text-dim'}`}
-          >
-            Sent at {formatTime(message.createdAt)}
-          </span>
 
           {/* Reaction pills */}
           {reactionEntries.length > 0 && (

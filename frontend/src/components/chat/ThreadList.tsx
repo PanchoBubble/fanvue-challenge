@@ -27,39 +27,6 @@ function formatTimeAgo(dateStr: string): string {
   return `${days}d ago`
 }
 
-// Deterministic color palette for thread avatars
-const AVATAR_COLORS = ['#1f1f1f']
-
-function getAvatarColor(id: string): string {
-  let hash = 0
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
-}
-
-function ThreadAvatar({
-  title,
-  id,
-  active,
-}: {
-  title: string
-  id: string
-  active?: boolean
-}) {
-  const letter = title.trim()[0]?.toUpperCase() || '?'
-  const bgColor = getAvatarColor(id)
-
-  return (
-    <div
-      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-1 text-sm font-semibold text-white ${active ? 'border-brand !bg-brand !text-black' : 'border-white'}`}
-      style={{ backgroundColor: bgColor }}
-    >
-      {letter}
-    </div>
-  )
-}
-
 export function ThreadList({
   selectedThreadId,
   onSelectThread,
@@ -172,14 +139,13 @@ export function ThreadList({
       </div>
 
       {/* Thread list */}
-      <div className="scrollbar-thin flex flex-1 flex-col gap-0.5 overflow-y-auto">
+      <div className="scrollbar-thin flex flex-1 flex-col divide-y divide-white/5 overflow-y-auto">
         {isLoading &&
           Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="flex h-16 animate-pulse items-center gap-3 rounded-lg p-3"
+              className="flex h-14 animate-pulse items-center gap-3 px-3 py-2"
             >
-              <div className="h-10 w-10 shrink-0 rounded-full bg-white/10" />
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="h-3.5 w-3/4 rounded bg-white/10" />
                 <div className="h-2.5 w-1/3 rounded bg-white/5" />
@@ -203,16 +169,15 @@ export function ThreadList({
                 exit={{ opacity: 0, x: -12 }}
                 transition={{ duration: 0.15 }}
                 onClick={() => !isEditing && handleSelectThread(thread.id)}
-                className={`group outline-surface-active relative flex h-16 cursor-pointer items-center gap-3 rounded-xl border-1 border-transparent p-3 text-left transition-colors ${
-                  isActive
-                    ? 'bg-surface-active !border-brand'
-                    : 'hover:bg-white/5'
+                className={`group relative flex h-14 cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors ${
+                  isActive ? 'bg-surface-active' : 'hover:bg-white/5'
                 }`}
               >
-                <ThreadAvatar
-                  title={thread.title}
-                  id={thread.id}
-                  active={isActive}
+                {/* Active indicator */}
+                <div
+                  className={`absolute top-1/2 left-0 h-6 w-0.5 -translate-y-1/2 rounded-r-full transition-colors ${
+                    isActive ? 'bg-brand' : 'bg-transparent'
+                  }`}
                 />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   {/* Row 1: Title + Time (top-right) + Menu */}
