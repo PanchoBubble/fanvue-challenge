@@ -125,7 +125,7 @@ export function ThreadList({
   }
 
   return (
-    <div className="bg-surface-page flex w-full flex-col gap-3 px-4 py-3">
+    <div className="bg-surface-page flex w-full flex-col gap-3 p-4">
       {/* Search */}
       <div className="border-border-subtle bg-surface-page focus-within:border-brand flex h-10 items-center gap-2 border-b px-3">
         <Search className="text-placeholder h-4 w-4" />
@@ -144,7 +144,7 @@ export function ThreadList({
           Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="flex h-14 animate-pulse items-center gap-3 px-3 py-2"
+              className="flex animate-pulse items-center gap-3 px-3 pt-2 pb-3"
             >
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="h-3.5 w-3/4 rounded bg-white/10" />
@@ -169,7 +169,7 @@ export function ThreadList({
                 exit={{ opacity: 0, x: -12 }}
                 transition={{ duration: 0.15 }}
                 onClick={() => !isEditing && handleSelectThread(thread.id)}
-                className={`group relative flex h-14 cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors ${
+                className={`group relative flex cursor-pointer items-center gap-3 px-3 pt-2 pb-3 text-left transition-colors ${
                   isActive ? 'bg-surface-active' : 'hover:bg-white/5'
                 }`}
               >
@@ -180,7 +180,7 @@ export function ThreadList({
                   }`}
                 />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  {/* Row 1: Title + Time (top-right) + Menu */}
+                  {/* Row 1: Title + Time */}
                   <div className="flex items-center justify-between gap-2">
                     {isEditing ? (
                       <input
@@ -205,27 +205,11 @@ export function ThreadList({
                         {thread.title}
                       </span>
                     )}
-                    <div className="flex shrink-0 items-center gap-1">
-                      <span className="text-dim text-[11px]">
-                        {formatTimeAgo(thread.lastMessageAt)}
-                      </span>
-                      {!isEditing && (
-                        <ThreadMenu
-                          onEdit={() => {
-                            setEditingId(thread.id)
-                            setEditTitle(thread.title)
-                          }}
-                          onDelete={() =>
-                            setDeleteTarget({
-                              id: thread.id,
-                              title: thread.title,
-                            })
-                          }
-                        />
-                      )}
-                    </div>
+                    <span className="text-dim shrink-0 text-[11px]">
+                      {formatTimeAgo(thread.lastMessageAt)}
+                    </span>
                   </div>
-                  {/* Row 2: Last message + Unread badge (bottom-right) */}
+                  {/* Row 2: Last message + Unread badge */}
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-dim truncate text-[12px]">
                       {thread.lastMessageText ?? ''}
@@ -241,6 +225,21 @@ export function ThreadList({
                     )}
                   </div>
                 </div>
+                {/* 3-dot menu — vertically centered */}
+                {!isEditing && (
+                  <ThreadMenu
+                    onEdit={() => {
+                      setEditingId(thread.id)
+                      setEditTitle(thread.title)
+                    }}
+                    onDelete={() =>
+                      setDeleteTarget({
+                        id: thread.id,
+                        title: thread.title,
+                      })
+                    }
+                  />
+                )}
               </motion.button>
             )
           })}

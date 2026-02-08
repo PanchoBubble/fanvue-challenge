@@ -14,12 +14,10 @@ export function MessageInput({ threadId, onSent }: MessageInputProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!text.trim() || sendMessage.isPending) return
-    sendMessage.mutate(text.trim(), {
-      onSuccess: () => {
-        setText('')
-        onSent?.()
-      },
-    })
+    const trimmed = text.trim()
+    setText('')
+    onSent?.()
+    sendMessage.mutate(trimmed)
   }
 
   return (

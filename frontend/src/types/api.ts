@@ -28,6 +28,7 @@ export interface Message {
   messageNumber: number
   createdAt: string
   reactions: Record<string, ReactionSummary>
+  pending?: boolean
 }
 
 export interface AuthResponse {

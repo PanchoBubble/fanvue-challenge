@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api'
 import { queryKeys } from '@/lib/queryKeys'
+import { useAuthStore } from '@/lib/authStore'
 import type { Message, PaginatedMessages } from '@/types/api'
 
 export function useMessages(threadId?: string) {
@@ -25,6 +26,8 @@ export function useMessages(threadId?: string) {
   })
 }
 
+type MessagesCache = { pages: PaginatedMessages[]; pageParams: unknown[] }
+
 export function useSendMessage(threadId: string) {
   const qc = useQueryClient()
   return useMutation({
@@ -33,11 +36,62 @@ export function useSendMessage(threadId: string) {
         method: 'POST',
         body: JSON.stringify({ text }),
       }).then((r) => r.message),
-    onSuccess: () => {
-      // SSE already adds the message to the cache in real-time.
-      // Invalidating messages here causes a full refetch that races with SSE,
-      // interrupting scroll-to-bottom when the user is scrolled up.
+    onMutate: async (text: string) => {
+      const key = queryKeys.messages.byThread(threadId)
+      await qc.cancelQueries({ queryKey: key })
+      const previous = qc.getQueryData<MessagesCache>(key)
+      const user = useAuthStore.getState().user
+      const tempId = `temp-${Date.now()}`
+      const optimistic: Message = {
+        id: tempId,
+        threadId,
+        text,
+        author: user?.username ?? '',
+        messageNumber: 0,
+        createdAt: new Date().toISOString(),
+        reactions: {},
+        pending: true,
+      }
+      qc.setQueryData<MessagesCache>(key, (old) => {
+        if (!old) return old
+        const lastPage = old.pages[old.pages.length - 1]
+        return {
+          ...old,
+          pages: [
+            ...old.pages.slice(0, -1),
+            { ...lastPage, items: [...lastPage.items, optimistic] },
+          ],
+        }
+      })
+      return { previous, tempId }
+    },
+    onSuccess: (realMessage, _text, context) => {
+      const key = queryKeys.messages.byThread(threadId)
+      qc.setQueryData<MessagesCache>(key, (old) => {
+        if (!old) return old
+        const hasReal = old.pages.some((p) =>
+          p.items.some((m) => m.id === realMessage.id),
+        )
+        return {
+          ...old,
+          pages: old.pages.map((page, i) => ({
+            ...page,
+            items: page.items
+              .filter((m) => m.id !== context?.tempId)
+              .concat(
+                !hasReal && i === old.pages.length - 1
+                  ? [{ ...realMessage, reactions: realMessage.reactions || {} }]
+                  : [],
+              ),
+          })),
+        }
+      })
       qc.invalidateQueries({ queryKey: queryKeys.threads.all })
+    },
+    onError: (_err, _text, context) => {
+      if (context?.previous) {
+        qc.setQueryData(queryKeys.messages.byThread(threadId), context.previous)
+      }
     },
   })
 }
