@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearch, useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/lib/authStore'
 import { useThreadsStream } from '@/hooks/useThreadsStream'
 import type { Thread } from '@/types/api'
+import { useHeartbeat, useOnlineUsers } from '@/hooks/usePresence'
 import { ThreadList } from './ThreadList'
 import { MessagePanel } from './MessagePanel'
+import { OnlineIndicator } from './OnlineIndicator'
 
 export function ChatLayout() {
   const user = useAuthStore((s) => s.user)
@@ -25,6 +27,10 @@ export function ChatLayout() {
       navigate({ to: '/threads', search: id ? { threadId: id } : {} }),
     [navigate],
   )
+
+  const onlineCount = useHeartbeat()
+  const [showOnline, setShowOnline] = useState(false)
+  const { data: onlineUsers } = useOnlineUsers(showOnline)
 
   // Subscribe to global thread events (e.g. new thread created)
   useThreadsStream(selectedThreadId)
@@ -49,6 +55,13 @@ export function ChatLayout() {
       <header className="border-border-subtle bg-surface-page flex h-14 shrink-0 items-center justify-between border-b px-5">
         <img src="/logo.svg" alt="Fanvue" className="h-5" />
         <div className="flex items-center gap-4">
+          <OnlineIndicator
+            count={onlineCount}
+            users={onlineUsers}
+            open={showOnline}
+            onToggle={() => setShowOnline((v) => !v)}
+            onClose={() => setShowOnline(false)}
+          />
           <span className="text-sm font-medium">{user?.username}</span>
           <button
             onClick={() => {

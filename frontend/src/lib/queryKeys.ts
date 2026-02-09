@@ -6,4 +6,7 @@ export const queryKeys = {
   messages: {
     byThread: (threadId: string) => ['messages', threadId] as const,
   },
+  presence: {
+    onlineUsers: () => ['presence', 'onlineUsers'] as const,
+  },
 }

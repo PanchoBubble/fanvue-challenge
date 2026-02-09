@@ -86,7 +86,7 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
   return (
     <div className={`flex w-full ${isSelf ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`group relative ${message.pending ? 'opacity-50' : ''}`}
+        className={`group relative ${showPicker ? 'z-40' : ''} ${message.pending ? 'opacity-50' : ''}`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}

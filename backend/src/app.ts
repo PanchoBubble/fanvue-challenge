@@ -5,6 +5,7 @@ import authRoutes from './routes/auth'
 import threadRoutes from './routes/threads'
 import messageRoutes, { sseService } from './routes/messages'
 import reactionRoutes from './routes/reactions'
+import presenceRoutes from './routes/presence'
 import { requireAuth, requireAuthFlexible } from './middleware/auth'
 import { seed } from './seed/seedData'
 
@@ -27,6 +28,7 @@ app.get('/api/threads/stream', requireAuthFlexible, (_req, res, next) => {
   }
 })
 app.use('/api/threads', requireAuth, threadRoutes)
+app.use('/api', requireAuth, presenceRoutes)
 
 // Health check
 app.get('/api/health', (_req, res) => {
