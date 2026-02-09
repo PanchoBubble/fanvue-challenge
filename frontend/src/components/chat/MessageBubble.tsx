@@ -86,15 +86,23 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
   return (
     <div className={`flex w-full ${isSelf ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`group relative${message.pending ? 'opacity-50' : ''}`}
+        className={`group relative ${message.pending ? 'opacity-50' : ''}`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
+        onClick={() => {
+          if (window.matchMedia('(pointer: coarse)').matches) {
+            setShowPicker((p) => !p)
+          }
+        }}
       >
         {/* Hover trigger for desktop — smiley button */}
         <button
           type="button"
-          onClick={() => setShowPicker((p) => !p)}
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowPicker((p) => !p)
+          }}
           className={`absolute -top-3 ${isSelf ? 'left-0 -translate-x-1/2' : 'right-0 translate-x-1/2'} bg-surface-page z-10 hidden h-6 w-6 items-center justify-center rounded-full text-xs opacity-0 shadow transition-opacity group-hover:flex group-hover:opacity-100`}
         >
           {'\u263A\uFE0F'}
@@ -105,7 +113,10 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
           <>
             <div
               className="fixed inset-0 z-20"
-              onClick={() => setShowPicker(false)}
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowPicker(false)
+              }}
             />
             <div
               className={`absolute -top-10 ${isSelf ? 'right-0' : 'left-0'} bg-surface-page z-30 flex gap-1 rounded-lg p-1.5 shadow-lg`}
@@ -114,7 +125,10 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
                 <button
                   key={type}
                   type="button"
-                  onClick={() => handleReaction(type)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleReaction(type)
+                  }}
                   className="hover:bg-surface-active flex h-7 w-7 items-center justify-center rounded-md text-base transition-colors"
                 >
                   {emoji}
@@ -151,31 +165,36 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
             </span>
           </div>
           <p className="text-sm break-words">{message.text}</p>
-
-          {/* Reaction pills */}
-          {reactionEntries.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
-              {reactionEntries.map(([type, { count, userIds }]) => {
-                const isReacted = userId ? userIds.includes(userId) : false
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => handleReaction(type)}
-                    className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors ${
-                      isReacted
-                        ? 'bg-brand/20 ring-brand/40 ring-1'
-                        : 'bg-white/10 hover:bg-white/20'
-                    }`}
-                  >
-                    <span>{REACTION_EMOJI[type] || type}</span>
-                    <span>{count}</span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
         </div>
+
+        {/* Reaction pills — positioned under the bubble */}
+        {reactionEntries.length > 0 && (
+          <div
+            className={`-mt-1 flex flex-wrap gap-1 px-1 ${isSelf ? 'justify-end' : 'justify-start'}`}
+          >
+            {reactionEntries.map(([type, { count, userIds }]) => {
+              const isReacted = userId ? userIds.includes(userId) : false
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleReaction(type)
+                  }}
+                  className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors ${
+                    isReacted
+                      ? 'bg-brand/20 ring-brand/40 ring-1'
+                      : 'bg-white/10 hover:bg-white/20'
+                  }`}
+                >
+                  <span>{REACTION_EMOJI[type] || type}</span>
+                  <span>{count}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
