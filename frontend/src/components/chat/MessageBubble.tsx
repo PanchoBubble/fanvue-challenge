@@ -103,7 +103,7 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
             e.stopPropagation()
             setShowPicker((p) => !p)
           }}
-          className={`absolute -top-3 ${isSelf ? 'left-0 -translate-x-1/2' : 'right-0 translate-x-1/2'} bg-surface-page z-10 hidden h-6 w-6 items-center justify-center rounded-full text-xs opacity-0 shadow transition-opacity group-hover:flex group-hover:opacity-100`}
+          className={`absolute -bottom-3 ${isSelf ? 'left-0 -translate-x-1/2' : 'right-0 translate-x-1/2'} bg-surface-page z-10 hidden h-6 w-6 items-center justify-center rounded-full text-xs opacity-0 shadow transition-opacity group-hover:flex group-hover:opacity-100`}
         >
           {'\u263A\uFE0F'}
         </button>
@@ -119,7 +119,7 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
               }}
             />
             <div
-              className={`absolute -top-10 ${isSelf ? 'right-0' : 'left-0'} bg-surface-page z-30 flex gap-1 rounded-lg p-1.5 shadow-lg`}
+              className={`absolute top-full mt-1 ${isSelf ? 'right-0' : 'left-0'} bg-surface-page z-30 flex gap-1 rounded-lg p-1.5 shadow-lg`}
             >
               {REACTION_TYPES.map(({ type, emoji }) => (
                 <button
