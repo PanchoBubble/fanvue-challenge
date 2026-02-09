@@ -86,7 +86,7 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
   return (
     <div className={`flex w-full ${isSelf ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`group relative ${showPicker ? 'z-40' : 'hover:z-10'} ${message.pending ? 'opacity-50' : ''}`}
+        className={`group relative ${message.pending ? 'opacity-50' : ''}`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
@@ -96,48 +96,6 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
           }
         }}
       >
-        {/* Hover trigger for desktop — smiley button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowPicker((p) => !p)
-          }}
-          className={`absolute -bottom-3 ${isSelf ? 'left-0 -translate-x-1/2' : 'right-0 translate-x-1/2'} bg-surface-page z-10 hidden h-6 w-6 items-center justify-center rounded-full text-xs opacity-0 shadow transition-opacity group-hover:flex group-hover:opacity-100`}
-        >
-          {'\u263A\uFE0F'}
-        </button>
-
-        {/* Reaction picker popover */}
-        {showPicker && (
-          <>
-            <div
-              className="fixed inset-0 z-20"
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowPicker(false)
-              }}
-            />
-            <div
-              className={`absolute top-full mt-1 ${isSelf ? 'right-0' : 'left-0'} bg-surface-page z-30 flex gap-1 rounded-lg p-1.5 shadow-lg`}
-            >
-              {REACTION_TYPES.map(({ type, emoji }) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleReaction(type)
-                  }}
-                  className="hover:bg-surface-active flex h-7 w-7 items-center justify-center rounded-md text-base transition-colors"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
         {/* Message bubble */}
         <div
           className={`flex max-w-[380px] flex-col gap-1 px-3.5 py-2.5 ${
@@ -165,6 +123,52 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
             </span>
           </div>
           <p className="text-sm break-words">{message.text}</p>
+
+          {/* Reaction trigger — inside bubble, bottom corner */}
+          <div
+            className={`relative flex ${isSelf ? 'justify-start' : 'justify-end'} -mb-1`}
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowPicker((p) => !p)
+              }}
+              className="hidden h-5 w-5 items-center justify-center rounded-full text-xs opacity-0 transition-opacity group-hover:flex group-hover:opacity-60 hover:!opacity-100"
+            >
+              {'\u263A\uFE0F'}
+            </button>
+
+            {/* Reaction picker popover — rendered above the bubble */}
+            {showPicker && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowPicker(false)
+                  }}
+                />
+                <div
+                  className={`absolute bottom-full mb-1 ${isSelf ? 'left-0' : 'right-0'} bg-surface-page z-50 flex gap-1 rounded-lg p-1.5 shadow-lg`}
+                >
+                  {REACTION_TYPES.map(({ type, emoji }) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleReaction(type)
+                      }}
+                      className="hover:bg-surface-active flex h-7 w-7 items-center justify-center rounded-md text-base transition-colors"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Reaction pills — positioned under the bubble */}
