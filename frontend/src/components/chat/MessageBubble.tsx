@@ -86,7 +86,7 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
   return (
     <div className={`flex w-full ${isSelf ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`group relative ${message.pending ? 'opacity-50' : ''}`}
+        className={`group relative ${message.pending ? 'opacity-50' : ''} ${reactionEntries.length > 0 ? 'mb-4' : ''}`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
@@ -171,10 +171,10 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
           </div>
         </div>
 
-        {/* Reaction pills — positioned under the bubble */}
+        {/* Reaction pills — floating over bottom of bubble */}
         {reactionEntries.length > 0 && (
           <div
-            className={`-mt-1 flex flex-wrap gap-1 px-1 ${isSelf ? 'justify-end' : 'justify-start'}`}
+            className={`absolute -bottom-3 z-10 flex flex-wrap gap-1 px-1 ${isSelf ? 'right-2' : 'left-2'}`}
           >
             {reactionEntries.map(([type, { count, userIds }]) => {
               const isReacted = userId ? userIds.includes(userId) : false
