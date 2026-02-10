@@ -124,9 +124,9 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
           </div>
           <p className="text-sm break-words">{message.text}</p>
 
-          {/* Reaction trigger — inside bubble, bottom corner */}
+          {/* Reaction trigger — absolute so it doesn't push content */}
           <div
-            className={`relative flex ${isSelf ? 'justify-start' : 'justify-end'} -mb-1`}
+            className={`absolute -bottom-2.5 z-20 ${isSelf ? 'left-1' : 'right-1'}`}
           >
             <button
               type="button"
@@ -139,7 +139,7 @@ export function MessageBubble({ message, isSelf }: MessageBubbleProps) {
               {'\u263A\uFE0F'}
             </button>
 
-            {/* Reaction picker popover — rendered above the bubble */}
+            {/* Reaction picker popover */}
             {showPicker && (
               <>
                 <div
